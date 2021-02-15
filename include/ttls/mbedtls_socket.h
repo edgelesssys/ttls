@@ -2,35 +2,10 @@
 
 #include <unordered_map>
 
-#include "mbedtls/certs.h"
-#include "mbedtls/config.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/debug.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/error.h"
-#include "mbedtls/net_sockets.h"
-#include "mbedtls/platform.h"
-#include "mbedtls/ssl.h"
+#include "mbedtls_context.h"
 #include "socket.h"
 
 namespace edgeless::ttls {
-
-class MbedtlsContext {
- public:
-  mbedtls_net_context server_fd;
-  mbedtls_ssl_context ssl;
-  mbedtls_ssl_config conf;
-  mbedtls_x509_crt cacert;
-  mbedtls_ctr_drbg_context ctr_drbg;
-  mbedtls_entropy_context entropy;
-
-  MbedtlsContext();
-  ~MbedtlsContext();
-
- private:
-  std::string static readCert(const char* filename);
-};
-
 class MbedtlsSocket : public Socket {
  public:
   int Close(int fd) override;
@@ -39,7 +14,10 @@ class MbedtlsSocket : public Socket {
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags) override;
 
  private:
-  std::unordered_map<int, MbedtlsContext*> m;
+  std::unordered_map<int, MbedtlsContext> m;
+
+  template <typename TF, typename... Args>
+  decltype(auto) execAndCheckResult(TF&& f, Args... a);
 };
 
 }  // namespace edgeless::ttls
