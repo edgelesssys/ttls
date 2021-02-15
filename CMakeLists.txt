@@ -24,6 +24,7 @@ set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
 
 add_library(ttls
   src/dispatcher.cc
+  src/mbedtls_context.cc
   src/mbedtls_socket.cc)
 
 target_include_directories(ttls
@@ -35,9 +36,11 @@ target_include_directories(ttls
 #
 
 add_executable(ttls_test
-  src/dispatcher_test.cc)
+  src/dispatcher_test.cc
+  src/mbedtls_test.cc)
 
-target_link_libraries(ttls_test ttls gtest_main mbedtls)
+
+target_link_libraries(ttls_test ttls gtest_main mbedtls mbedx509 mbedcrypto)
 
 include(GoogleTest)
 enable_testing()
