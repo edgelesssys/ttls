@@ -1,6 +1,7 @@
 #include "mbedtls_socket.h"
 
 #include <netdb.h>
+#include <unistd.h>
 
 #include <stdexcept>
 
@@ -16,15 +17,16 @@ decltype(auto) MbedtlsSocket::execAndCheckResult(TF&& f, Args... args) {
 }
 
 int MbedtlsSocket::Close(int sockfd) {
-  auto ctx = m.at(sockfd);
+  auto& ctx = m.at(sockfd);
   execAndCheckResult(mbedtls_ssl_close_notify, &ctx.ssl);
   m.erase(sockfd);
+  close(sockfd);
   return 0;
 }
 
 int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
   auto ret = m.try_emplace(sockfd, MbedtlsContext{});
-  auto ctx = ret.first->second;
+  auto& ctx = ret.first->second;
 
   // extract hostname and port of sockaddr
   std::string hbuf = std::string(NI_MAXHOST, ' ');
@@ -55,13 +57,13 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
 }
 
 ssize_t MbedtlsSocket::Recv(int sockfd, void* buf, size_t len, int /*flags*/) {
-  auto ctx = m.at(sockfd);
+  auto& ctx = m.at(sockfd);
   int ret = execAndCheckResult(mbedtls_ssl_read, &ctx.ssl, static_cast<unsigned char*>(buf), len);
   return ret;
 }
 
 ssize_t MbedtlsSocket::Send(int sockfd, const void* buf, size_t len, int /*flags*/) {
-  auto ctx = m.at(sockfd);
+  auto& ctx = m.at(sockfd);
   int ret = execAndCheckResult(mbedtls_ssl_write, &ctx.ssl, static_cast<const unsigned char*>(buf), len);
   return ret;
 }
