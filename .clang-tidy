@@ -2,6 +2,7 @@ WarningsAsErrors: '*'
 Checks: "*,\
 -cert-err58-cpp,\
 -cppcoreguidelines-avoid-goto,\
+-cppcoreguidelines-avoid-magic-numbers,\
 -cppcoreguidelines-owning-memory,\
 -cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
 -cppcoreguidelines-pro-bounds-pointer-arithmetic,\
@@ -23,4 +24,5 @@ Checks: "*,\
 -modernize-use-trailing-return-type,\
 -readability-braces-around-statements,\
 -readability-implicit-bool-conversion,\
+-readability-magic-numbers,\
 -readability-qualified-auto"
