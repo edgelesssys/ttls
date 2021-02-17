@@ -25,8 +25,5 @@ class MbedtlsContext final {
 
   MbedtlsContext();
   ~MbedtlsContext();
-
- private:
-  std::string static readCert(const char* filename);
 };
 }  // namespace edgeless::ttls
