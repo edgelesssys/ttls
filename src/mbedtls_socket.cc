@@ -21,51 +21,76 @@ static int CheckResult(int ret) {
   return ret;
 }
 
+MbedtlsSocket::MbedtlsSocket()
+    : conf{}, cacert{}, ctr_drbg{}, entropy{} {
+  mbedtls_ssl_config_init(&conf);
+  mbedtls_x509_crt_init(&cacert);
+  mbedtls_ctr_drbg_init(&ctr_drbg);
+  mbedtls_entropy_init(&entropy);
+
+  CheckResult(mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,  //TODO: CHECK OUTPUT
+                                    nullptr,
+                                    0));
+  CheckResult(mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT,
+                                          MBEDTLS_SSL_TRANSPORT_STREAM,
+                                          MBEDTLS_SSL_PRESET_DEFAULT));
+
+  mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+  CheckResult(mbedtls_x509_crt_parse_file(&cacert, "test-ca-sha256.crt"));
+  mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+  mbedtls_ssl_conf_ca_chain(&conf, &cacert, nullptr);
+}
+
+MbedtlsSocket::~MbedtlsSocket() {
+  mbedtls_x509_crt_free(&cacert);
+  mbedtls_ssl_config_free(&conf);
+  mbedtls_ctr_drbg_free(&ctr_drbg);
+  mbedtls_entropy_free(&entropy);
+}
+
 int MbedtlsSocket::Close(int sockfd) {
-  auto& ctx = contexts_.at(sockfd);
-  CheckResult(mbedtls_ssl_close_notify(&ctx.ssl));
+  auto& ret = contexts_.at(sockfd);
+  auto& ssl = ret.first;
+  auto& server_fd = ret.second;
+
+  CheckResult(mbedtls_ssl_close_notify(&ssl));
+
+  mbedtls_ssl_free(&ssl);
+  mbedtls_net_free(&server_fd);
   contexts_.erase(sockfd);
   return 0;
 }
 
 int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
-  auto ret = contexts_.try_emplace(sockfd, MbedtlsContext{});
-  auto& ctx = ret.first->second;
-  ctx.server_fd.fd = sockfd;
+  auto ret = contexts_.try_emplace(sockfd, std::make_pair(mbedtls_ssl_context{}, mbedtls_net_context{}));
+  auto& ssl = ret.first->second.first;
+  auto& server_fd = ret.first->second.second;
 
-  CheckResult(mbedtls_ctr_drbg_seed(&ctx.ctr_drbg, mbedtls_entropy_func, &ctx.entropy,  //TODO: CHECK OUTPUT
-                                    nullptr,
-                                    0));
-  CheckResult(mbedtls_ssl_config_defaults(&ctx.conf, MBEDTLS_SSL_IS_CLIENT,
-                                          MBEDTLS_SSL_TRANSPORT_STREAM,
-                                          MBEDTLS_SSL_PRESET_DEFAULT));
-  mbedtls_ssl_conf_rng(&ctx.conf, mbedtls_ctr_drbg_random, &ctx.ctr_drbg);
+  mbedtls_ssl_init(&ssl);
+  mbedtls_net_init(&server_fd);
+  server_fd.fd = sockfd;
 
   // std::string cert = MbedtlsContext::readCert("test-ca-sha256.crt");
   // CheckResult(mbedtls_x509_crt_parse(&ctx.cacert, (const unsigned char*)cert.c_str(),
   //                                    cert.size()));
 
-  CheckResult(mbedtls_x509_crt_parse_file(&ctx.cacert, "test-ca-sha256.crt"));
-  mbedtls_ssl_conf_authmode(&ctx.conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-  mbedtls_ssl_conf_ca_chain(&ctx.conf, &ctx.cacert, nullptr);
+  CheckResult(mbedtls_ssl_setup(&ssl, &conf));
+  CheckResult(mbedtls_ssl_set_hostname(&ssl, "localhost"));
 
-  CheckResult(mbedtls_ssl_setup(&ctx.ssl, &ctx.conf));
-  CheckResult(mbedtls_ssl_set_hostname(&ctx.ssl, "localhost"));
+  CheckResult(connect(server_fd.fd, addr, addrlen));  // connection failed -> exit code 6
 
-  CheckResult(connect(sockfd, addr, addrlen));  // connection failed -> exit code 6
-
-  mbedtls_ssl_set_bio(&ctx.ssl, &ctx.server_fd, mbedtls_net_send, mbedtls_net_recv, nullptr);
-  CheckResult(mbedtls_ssl_handshake(&ctx.ssl));
+  mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, nullptr);
+  CheckResult(mbedtls_ssl_handshake(&ssl));
 
   return 0;
 }
 
 ssize_t MbedtlsSocket::Recv(int sockfd, void* buf, size_t len, int /*flags*/) {
-  auto& ctx = contexts_.at(sockfd);
-  return CheckResult(mbedtls_ssl_read(&ctx.ssl, static_cast<unsigned char*>(buf), len));
+  auto& ssl = contexts_.at(sockfd).first;
+  return CheckResult(mbedtls_ssl_read(&ssl, static_cast<unsigned char*>(buf), len));
 }
 
 ssize_t MbedtlsSocket::Send(int sockfd, const void* buf, size_t len, int /*flags*/) {
-  auto& ctx = contexts_.at(sockfd);
-  return CheckResult(mbedtls_ssl_write(&ctx.ssl, static_cast<const unsigned char*>(buf), len));
+  auto& ssl = contexts_.at(sockfd).first;
+  return CheckResult(mbedtls_ssl_write(&ssl, static_cast<const unsigned char*>(buf), len));
 }

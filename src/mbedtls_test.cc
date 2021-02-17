@@ -3,7 +3,6 @@
 #include <netinet/in.h>
 #include <ttls/mbedtls_socket.h>
 
-using namespace std;
 using namespace edgeless::ttls;
 
 constexpr uint16_t kPort = 9000;
