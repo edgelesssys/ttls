@@ -90,19 +90,19 @@ int server(void) {
      * Instead, you may want to use mbedtls_x509_crt_parse_file() to read the
      * server and CA certificates, as well as mbedtls_pk_parse_keyfile().
      */
-  ret = mbedtls_x509_crt_parse_file(&srvcert, "server2-sha256.crt");
+  ret = mbedtls_x509_crt_parse_file(&srvcert, "server.crt");
   if (ret != 0) {
     mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret);
     goto exit;
   }
 
-  ret = mbedtls_x509_crt_parse_file(&srvcert, "test-ca-sha256.crt");
+  ret = mbedtls_x509_crt_parse_file(&srvcert, "ca.crt");
   if (ret != 0) {
     mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret);
     goto exit;
   }
 
-  ret = mbedtls_pk_parse_keyfile(&pkey, "server2.key", NULL);
+  ret = mbedtls_pk_parse_keyfile(&pkey, "server.key", NULL);
   if (ret != 0) {
     mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
     goto exit;

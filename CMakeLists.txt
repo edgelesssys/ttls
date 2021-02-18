@@ -33,11 +33,22 @@ target_include_directories(ttls
 #
 # test
 #
+add_custom_target(certs
+  COMMAND openssl req -x509 -newkey rsa:4096 -nodes -keyout ca.key -out ca.crt -days 365
+  -subj "/C=US/ST=State/L=City/O=Org/OU=Org/CN=Test CA"
+  -addext "subjectAltName = DNS:localhost"
+  COMMAND openssl req -new -newkey rsa:4096 -nodes -keyout server.key -out server.csr -days 365
+  -subj "/C=US/ST=State/L=City/O=Org/OU=Org/CN=localhost"
+  -addext "subjectAltName = DNS:localhost"
+  COMMAND openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+)
+
 
 add_executable(ttls_test
   src/dispatcher_test.cc
   src/mbedtls_test.cc)
 
+add_dependencies(ttls_test certs)
 
 target_link_libraries(ttls_test ttls gtest_main mbedtls mbedx509 mbedcrypto)
 

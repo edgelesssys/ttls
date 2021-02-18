@@ -38,7 +38,7 @@ MbedtlsSocket::MbedtlsSocket()
                                           MBEDTLS_SSL_PRESET_DEFAULT));
 
   mbedtls_ssl_conf_rng(&conf_, mbedtls_ctr_drbg_random, &ctr_drbg_);
-  CheckResult(mbedtls_x509_crt_parse_file(&cacert_, "test-ca-sha256.crt"));
+  CheckResult(mbedtls_x509_crt_parse_file(&cacert_, "ca.crt"));
   mbedtls_ssl_conf_authmode(&conf_, MBEDTLS_SSL_VERIFY_REQUIRED);
   mbedtls_ssl_conf_ca_chain(&conf_, &cacert_, nullptr);
 }
@@ -71,7 +71,7 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
   mbedtls_net_init(&server_fd);
   server_fd.fd = sockfd;
 
-  // std::string cert = MbedtlsContext::readCert("test-ca-sha256.crt");
+  // std::string cert = MbedtlsContext::readCert("ca.crt");
   // CheckResult(mbedtls_x509_crt_parse(&ctx.cacert, (const unsigned char*)cert.c_str(),
   //                                    cert.size()));
 
