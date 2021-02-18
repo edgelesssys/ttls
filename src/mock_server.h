@@ -16,9 +16,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#pragma once
 
 #include <stdlib.h>
 #include <string.h>
+
+#include <condition_variable>
 
 #include "mbedtls/certs.h"
 #include "mbedtls/config.h"
@@ -41,7 +44,12 @@
 
 namespace edgeless::ttls {
 
+std::mutex m;
+std::condition_variable cv;
+bool ready = false;
+
 int server(void) {
+  std::unique_lock<std::mutex> lk(m);
   int ret, len;
   mbedtls_net_context listen_fd, client_fd;
   unsigned char buf[1024];
@@ -183,6 +191,13 @@ reset:
      */
   mbedtls_printf("  . Waiting for a remote connection ...");
   fflush(stdout);
+
+  /*
+  * Signal that setup is completed
+  */
+  ready = true;
+  lk.unlock();
+  cv.notify_one();
 
   if ((ret = mbedtls_net_accept(&listen_fd, &client_fd,
                                 NULL, 0, NULL)) != 0) {

@@ -4,6 +4,7 @@
 #include <ttls/mbedtls_socket.h>
 
 #include <chrono>
+#include <condition_variable>
 #include <thread>
 
 #include "mock_server.h"
@@ -19,7 +20,11 @@ TEST(Mbedtls, Connect) {
   const int fd = socket(AF_INET, SOCK_STREAM, 0);
 
   std::thread t1(server);
-  std::this_thread::sleep_for(1000ms);
+
+  {
+    std::unique_lock<std::mutex> lk(m);
+    cv.wait(lk, [] { return ready; });
+  }
 
   MbedtlsSocket sock;
   sockaddr_in sock_addr{};
@@ -35,7 +40,10 @@ TEST(Mbedtls, SendAndRecieve) {
   const int fd = socket(AF_INET, SOCK_STREAM, 0);
 
   std::thread t1(server);
-  std::this_thread::sleep_for(1000ms);
+  {
+    std::unique_lock<std::mutex> lk(m);
+    cv.wait(lk, [] { return ready; });
+  }
 
   MbedtlsSocket sock;
   sockaddr_in sock_addr{};
