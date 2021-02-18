@@ -8,12 +8,3 @@ cmake ..
 make
 ctest
 ```
-
-# Tests
-Prerequisites:
-* start poc's server
-* copy cert.pem into `build/`
-
-```bash
-cd build && ctest
-```
