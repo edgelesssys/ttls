@@ -7,14 +7,16 @@
 
 #include <stdexcept>
 #include <string>
+#include <system_error>
+
+#include "mbedtls/error.h"
 
 using namespace edgeless::ttls;
 
 static int CheckResult(int ret) {
-  constexpr size_t kBufferSize = 100;
   using namespace std::string_literals;
   if (ret < 0) {
-    std::array<char, kBufferSize> buf{};
+    std::array<char, 100> buf{};
     mbedtls_strerror(ret, buf.data(), buf.size());
     throw std::runtime_error("mbedtls: "s + buf.data());
   }
@@ -22,36 +24,34 @@ static int CheckResult(int ret) {
 }
 
 MbedtlsSocket::MbedtlsSocket()
-    : conf{}, cacert{}, ctr_drbg{}, entropy{} {
-  mbedtls_ssl_config_init(&conf);
-  mbedtls_x509_crt_init(&cacert);
-  mbedtls_ctr_drbg_init(&ctr_drbg);
-  mbedtls_entropy_init(&entropy);
+    : conf_{}, cacert_{}, ctr_drbg_{}, entropy_{} {
+  mbedtls_ssl_config_init(&conf_);
+  mbedtls_x509_crt_init(&cacert_);
+  mbedtls_ctr_drbg_init(&ctr_drbg_);
+  mbedtls_entropy_init(&entropy_);
 
-  CheckResult(mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,  //TODO: CHECK OUTPUT
+  CheckResult(mbedtls_ctr_drbg_seed(&ctr_drbg_, mbedtls_entropy_func, &entropy_,
                                     nullptr,
                                     0));
-  CheckResult(mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT,
+  CheckResult(mbedtls_ssl_config_defaults(&conf_, MBEDTLS_SSL_IS_CLIENT,
                                           MBEDTLS_SSL_TRANSPORT_STREAM,
                                           MBEDTLS_SSL_PRESET_DEFAULT));
 
-  mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
-  CheckResult(mbedtls_x509_crt_parse_file(&cacert, "test-ca-sha256.crt"));
-  mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-  mbedtls_ssl_conf_ca_chain(&conf, &cacert, nullptr);
+  mbedtls_ssl_conf_rng(&conf_, mbedtls_ctr_drbg_random, &ctr_drbg_);
+  CheckResult(mbedtls_x509_crt_parse_file(&cacert_, "test-ca-sha256.crt"));
+  mbedtls_ssl_conf_authmode(&conf_, MBEDTLS_SSL_VERIFY_REQUIRED);
+  mbedtls_ssl_conf_ca_chain(&conf_, &cacert_, nullptr);
 }
 
 MbedtlsSocket::~MbedtlsSocket() {
-  mbedtls_x509_crt_free(&cacert);
-  mbedtls_ssl_config_free(&conf);
-  mbedtls_ctr_drbg_free(&ctr_drbg);
-  mbedtls_entropy_free(&entropy);
+  mbedtls_x509_crt_free(&cacert_);
+  mbedtls_ssl_config_free(&conf_);
+  mbedtls_ctr_drbg_free(&ctr_drbg_);
+  mbedtls_entropy_free(&entropy_);
 }
 
 int MbedtlsSocket::Close(int sockfd) {
-  auto& ret = contexts_.at(sockfd);
-  auto& ssl = ret.first;
-  auto& server_fd = ret.second;
+  auto& [ssl, server_fd] = contexts_.at(sockfd);
 
   CheckResult(mbedtls_ssl_close_notify(&ssl));
 
@@ -62,9 +62,10 @@ int MbedtlsSocket::Close(int sockfd) {
 }
 
 int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
-  auto ret = contexts_.try_emplace(sockfd, std::make_pair(mbedtls_ssl_context{}, mbedtls_net_context{}));
-  auto& ssl = ret.first->second.first;
-  auto& server_fd = ret.first->second.second;
+  const auto ret = contexts_.try_emplace(sockfd);
+  if (!ret.second)
+    throw std::system_error(EISCONN, std::system_category(), __func__);
+  auto& [ssl, server_fd] = ret.first->second;
 
   mbedtls_ssl_init(&ssl);
   mbedtls_net_init(&server_fd);
@@ -74,7 +75,7 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
   // CheckResult(mbedtls_x509_crt_parse(&ctx.cacert, (const unsigned char*)cert.c_str(),
   //                                    cert.size()));
 
-  CheckResult(mbedtls_ssl_setup(&ssl, &conf));
+  CheckResult(mbedtls_ssl_setup(&ssl, &conf_));
   CheckResult(mbedtls_ssl_set_hostname(&ssl, "localhost"));
 
   CheckResult(connect(server_fd.fd, addr, addrlen));  // connection failed -> exit code 6
