@@ -1,0 +1,32 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Setup
+      run: |
+        sudo apt update
+        sudo apt install clang-tidy-10 libmbedtls-dev
+        mkdir build
+
+    - name: Build
+      run: |
+        cmake ..
+        make -j`nproc`
+      working-directory: build
+
+    - name: Test
+      run: ctest --output-on-failure
+      working-directory: build
