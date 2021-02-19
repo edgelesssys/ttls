@@ -51,6 +51,7 @@ MbedtlsSocket::~MbedtlsSocket() {
 }
 
 int MbedtlsSocket::Close(int sockfd) {
+  std::lock_guard<std::mutex> lock(mtx_);
   auto& [ssl, server_fd] = contexts_.at(sockfd);
 
   CheckResult(mbedtls_ssl_close_notify(&ssl));
@@ -62,7 +63,11 @@ int MbedtlsSocket::Close(int sockfd) {
 }
 
 int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
-  const auto ret = contexts_.try_emplace(sockfd);
+  const auto ret = [&] {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return contexts_.try_emplace(sockfd);
+  }();
+
   if (!ret.second)
     throw std::system_error(EISCONN, std::system_category(), __func__);
   auto& [ssl, server_fd] = ret.first->second;
@@ -71,14 +76,10 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
   mbedtls_net_init(&server_fd);
   server_fd.fd = sockfd;
 
-  // std::string cert = MbedtlsContext::readCert("ca.crt");
-  // CheckResult(mbedtls_x509_crt_parse(&ctx.cacert, (const unsigned char*)cert.c_str(),
-  //                                    cert.size()));
-
   CheckResult(mbedtls_ssl_setup(&ssl, &conf_));
   CheckResult(mbedtls_ssl_set_hostname(&ssl, "localhost"));
 
-  CheckResult(connect(server_fd.fd, addr, addrlen));  // connection failed -> exit code 6
+  CheckResult(connect(server_fd.fd, addr, addrlen));
 
   mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, nullptr);
   CheckResult(mbedtls_ssl_handshake(&ssl));
@@ -87,11 +88,19 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
 }
 
 ssize_t MbedtlsSocket::Recv(int sockfd, void* buf, size_t len, int /*flags*/) {
-  auto& ssl = contexts_.at(sockfd).first;
+  auto& ssl = [&]() -> auto& {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return contexts_.at(sockfd).first;
+  }
+  ();
   return CheckResult(mbedtls_ssl_read(&ssl, static_cast<unsigned char*>(buf), len));
 }
 
 ssize_t MbedtlsSocket::Send(int sockfd, const void* buf, size_t len, int /*flags*/) {
-  auto& ssl = contexts_.at(sockfd).first;
+  auto& ssl = [&]() -> auto& {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return contexts_.at(sockfd).first;
+  }
+  ();
   return CheckResult(mbedtls_ssl_write(&ssl, static_cast<const unsigned char*>(buf), len));
 }

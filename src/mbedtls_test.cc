@@ -16,15 +16,24 @@ constexpr uint16_t kPort = 9000;
 constexpr size_t kBufferSize = 4096;
 constexpr std::string_view kRequest = "GET / HTTP/1.0\r\n\r\n";
 
-TEST(Mbedtls, Connect) {
-  const int fd = socket(AF_INET, SOCK_STREAM, 0);
+std::thread start_server() {
+  std::mutex m;
+  std::condition_variable cv;
+  bool ready = false;
 
-  std::thread t1(server);
-
+  std::thread t1(server, std::ref(m), std::ref(cv), std::ref(ready));
   {
     std::unique_lock<std::mutex> lk(m);
-    cv.wait(lk, [] { return ready; });
+    cv.wait(lk, [&] { return ready; });
   }
+  return t1;
+}
+
+TEST(Mbedtls, Connect) {
+  const int fd = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(fd, 0);
+
+  auto t1 = start_server();
 
   MbedtlsSocket sock;
   sockaddr_in sock_addr{};
@@ -38,12 +47,9 @@ TEST(Mbedtls, Connect) {
 
 TEST(Mbedtls, SendAndRecieve) {
   const int fd = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(fd, 0);
 
-  std::thread t1(server);
-  {
-    std::unique_lock<std::mutex> lk(m);
-    cv.wait(lk, [] { return ready; });
-  }
+  auto t1 = start_server();
 
   MbedtlsSocket sock;
   sockaddr_in sock_addr{};

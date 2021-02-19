@@ -44,12 +44,7 @@
 
 namespace edgeless::ttls {
 
-std::mutex m;
-std::condition_variable cv;
-bool ready = false;
-
-int server(void) {
-  std::unique_lock<std::mutex> lk(m);
+int server(std::mutex& m, std::condition_variable& cv, bool& ready) {
   int ret, len;
   mbedtls_net_context listen_fd, client_fd;
   unsigned char buf[1024];
@@ -195,8 +190,10 @@ reset:
   /*
   * Signal that setup is completed
   */
-  ready = true;
-  lk.unlock();
+  {
+    const std::lock_guard lock(m);
+    ready = true;
+  }
   cv.notify_one();
 
   if ((ret = mbedtls_net_accept(&listen_fd, &client_fd,

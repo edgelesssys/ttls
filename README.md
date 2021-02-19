@@ -1,5 +1,5 @@
 # Transparent TLS
-# Build
+## Build
 ```sh
 sudo apt install clang-tidy-10 libmbedtls-dev
 mkdir build

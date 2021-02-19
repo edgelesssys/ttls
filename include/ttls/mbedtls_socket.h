@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <unordered_map>
 
 #include "mbedtls/ctr_drbg.h"
@@ -19,6 +20,7 @@ class MbedtlsSocket : public Socket {
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags) override;
 
  private:
+  std::mutex mtx_;
   std::unordered_map<int, std::pair<mbedtls_ssl_context, mbedtls_net_context>> contexts_;
 
   mbedtls_ssl_config conf_;
