@@ -18,7 +18,6 @@ Dispatcher::Dispatcher(std::string_view config, const SocketPtr& raw, const Sock
   assert(tls);
 
   // parse config
-  // { "tls": ["127.0.0.1:443", "192.168.0.1:2001"] }
   try {
     config_ = std::make_unique<nlohmann::json>(nlohmann::json::parse(config));
 
@@ -36,17 +35,23 @@ Dispatcher::~Dispatcher() = default;
 
 int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
   // 1. parse IP out of sockaddr
-  std::string ip_buf(addrlen, ' ');
-  std::string port_buf(addrlen, ' ');
-  getnameinfo(addr, addrlen, ip_buf.data(), addrlen, port_buf.data(), addrlen, 0);
-  std::string ip_port = ip_buf + port_buf;
+  std::string ip_buf(NI_MAXHOST, ' ');
+  std::string port_buf(NI_MAXSERV, ' ');
+
+  int ret = getnameinfo(addr, addrlen, ip_buf.data(), NI_MAXHOST, port_buf.data(), NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+  if (ret != 0) {
+    return -1;
+  }
+
+  ip_buf = ip_buf.substr(0, ip_buf.find('\0'));
+  port_buf = port_buf.substr(0, port_buf.find('\0'));
+  std::string ip_port = ip_buf + ":" + port_buf;
 
   // 2. check if in json --> save fd + tls_->Connect(...)
   if (tls_addrs_.find(ip_port) != tls_addrs_.end()) {
     try {
-      tls_->Connect(sockfd, addr, addrlen);
       tls_fds_.insert(sockfd);
-      return 0;
+      return tls_->Connect(sockfd, addr, addrlen);
     } catch (const std::runtime_error&) {
       return -1;
     }
@@ -57,12 +62,11 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
 }
 
 ssize_t Dispatcher::Recv(int sockfd, void* buf, size_t len, int flags) {
-  // when fd known -> tls_->Send()
+  // when fd known -> tls_->Recv()
   if (tls_fds_.find(sockfd) != tls_fds_.end()) {
     try {
-      tls_->Recv(sockfd, buf, len, flags);
       tls_fds_.insert(sockfd);
-      return 0;
+      return tls_->Recv(sockfd, buf, len, flags);
     } catch (const std::runtime_error&) {
       return -1;
     }
@@ -74,14 +78,27 @@ ssize_t Dispatcher::Recv(int sockfd, void* buf, size_t len, int flags) {
 ssize_t Dispatcher::Send(int sockfd, const void* buf, size_t len, int flags) {
   if (tls_fds_.find(sockfd) != tls_fds_.end()) {
     try {
-      tls_->Send(sockfd, buf, len, flags);
       tls_fds_.insert(sockfd);
-      return 0;
+      return tls_->Send(sockfd, buf, len, flags);
     } catch (const std::runtime_error&) {
       return -1;
     }
   } else {
     return raw_->Send(sockfd, buf, len, flags);
+  }
+}
+
+int Dispatcher::Close(int sockfd) {
+  if (tls_fds_.find(sockfd) != tls_fds_.end()) {
+    try {
+      tls_->Close(sockfd);
+      tls_fds_.erase(sockfd);
+      return 0;
+    } catch (const std::runtime_error&) {
+      return -1;
+    }
+  } else {
+    return raw_->Close(sockfd);
   }
 }
 
