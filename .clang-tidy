@@ -25,4 +25,5 @@ Checks: "*,\
 -readability-braces-around-statements,\
 -readability-implicit-bool-conversion,\
 -readability-magic-numbers,\
--readability-qualified-auto"
+-readability-qualified-auto"\
+-hicpp-signed-bitwise
