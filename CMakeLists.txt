@@ -24,7 +24,8 @@ set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
 
 add_library(ttls
   src/dispatcher.cc
-  src/mbedtls_socket.cc)
+  src/mbedtls_socket.cc
+  src/raw_socket.cc)
 
 target_include_directories(ttls
   PUBLIC include
