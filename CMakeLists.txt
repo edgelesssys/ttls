@@ -50,9 +50,14 @@ add_executable(ttls_test
   src/dispatcher_test.cc
   src/mbedtls_test.cc)
 
+add_library(ttls_test_notidy
+  src/mock_server.cpp)
+
+set_target_properties(ttls_test_notidy PROPERTIES CXX_CLANG_TIDY "")
+
 add_dependencies(ttls_test certs)
 
-target_link_libraries(ttls_test ttls gtest_main mbedtls mbedx509 mbedcrypto)
+target_link_libraries(ttls_test ttls_test_notidy ttls gtest_main mbedtls mbedx509 mbedcrypto)
 
 include(GoogleTest)
 enable_testing()

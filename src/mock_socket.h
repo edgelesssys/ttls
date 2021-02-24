@@ -26,7 +26,7 @@ struct MockSocket : Socket {
   ssize_t Recv(int sockfd, void* buf, size_t len, int /*flags*/) override {
     auto& v = msg_buf[sockfd];
     const std::string prefix("OK-");
-    int ret = v.size() + prefix.size() < len ? v.size() + prefix.size() : len;
+    size_t ret = v.size() + prefix.size() < len ? v.size() + prefix.size() : len;
 
     std::string resp(v.begin(), v.end());
     resp = prefix + resp;

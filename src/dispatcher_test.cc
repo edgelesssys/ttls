@@ -32,7 +32,7 @@ TEST(Dispatcher, EmptyConfig) {
   hints.ai_flags |= AI_NUMERICHOST;
   hints.ai_flags |= AI_NUMERICSERV;
 
-  addrinfo* res;
+  addrinfo* res = nullptr;
   getaddrinfo("127.0.0.1", "443", &hints, &res);
 
   raw->connect_ret = 2;
@@ -66,7 +66,7 @@ TEST(Dispatcher, ForwardConfig) {
   hints.ai_flags |= AI_NUMERICHOST;
   hints.ai_flags |= AI_NUMERICSERV;
 
-  addrinfo* res;
+  addrinfo* res = nullptr;
   getaddrinfo("127.0.0.1", "443", &hints, &res);
 
   tls->connect_ret = 2;
