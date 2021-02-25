@@ -48,7 +48,8 @@ add_custom_target(certs DEPENDS server.crt)
 
 add_executable(ttls_test
   src/dispatcher_test.cc
-  src/mbedtls_test.cc)
+  src/mbedtls_test.cc
+  src/util.cc)
 
 add_library(ttls_test_notidy
   src/mock_server.cpp)

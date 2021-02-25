@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <nlohmann/json_fwd.hpp>
 #include <string_view>
 #include <unordered_set>
@@ -30,6 +31,7 @@ class Dispatcher final {
 
  private:
   const nlohmann::json& Conf() const noexcept;
+  std::mutex mtx_;
 
   std::unordered_set<std::string> tls_addrs_;
   std::unordered_set<int> tls_fds_;
