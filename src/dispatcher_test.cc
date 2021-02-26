@@ -26,9 +26,9 @@ TEST(Dispatcher, EmptyConfig) {
 
   Dispatcher dispatcher(R"({"tls":[]})", raw, tls);
 
-  sockaddr_in sock_addr = MakeSockaddr("127.0.0.1", 443);
+  sockaddr sock_addr = MakeSockaddr("127.0.0.1", 443);
 
-  EXPECT_EQ(0, dispatcher.Connect(tls_fd, reinterpret_cast<sockaddr*>(&sock_addr), sizeof(sock_addr)));
+  EXPECT_EQ(0, dispatcher.Connect(tls_fd, &sock_addr, sizeof(sock_addr)));
 
   // expect call is not forwarded to tls function
   EXPECT_TRUE(tls->connections.empty());
@@ -37,7 +37,7 @@ TEST(Dispatcher, EmptyConfig) {
   ASSERT_EQ(1, raw->connections.size());
 
   const auto& args = raw->connections.at(tls_fd);
-  EXPECT_EQ(reinterpret_cast<sockaddr*>(&sock_addr), args.addr);
+  EXPECT_EQ(&sock_addr, args.addr);
   EXPECT_EQ(sizeof(sock_addr), args.addrlen);
 
   EXPECT_EQ(0, dispatcher.Close(tls_fd));
@@ -50,23 +50,17 @@ TEST(Dispatcher, ForwardConfig) {
   const int tls_fd = 4;
 
   Dispatcher dispatcher(R"({"tls":["127.0.0.1:443", "192.168.0.1:80"]})", raw, tls);
-  addrinfo hints{};
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags |= AI_NUMERICHOST;
-  hints.ai_flags |= AI_NUMERICSERV;
 
-  addrinfo* res = nullptr;
-  getaddrinfo("127.0.0.1", "443", &hints, &res);
+  sockaddr sock_addr = MakeSockaddr("127.0.0.1", 443);
 
-  EXPECT_EQ(0, dispatcher.Connect(tls_fd, res->ai_addr, res->ai_addrlen));
+  EXPECT_EQ(0, dispatcher.Connect(tls_fd, &sock_addr, sizeof(sock_addr)));
 
   // expect call is forwarded to tls function
   ASSERT_EQ(1, tls->connections.size());
 
   const auto& args = tls->connections.at(tls_fd);
-  EXPECT_EQ(res->ai_addr, args.addr);
-  EXPECT_EQ(res->ai_addrlen, args.addrlen);
+  EXPECT_EQ(&sock_addr, args.addr);
+  EXPECT_EQ(sizeof(sock_addr), args.addrlen);
 
   // expect call is not forwarded to raw function
   EXPECT_TRUE(raw->connections.empty());
@@ -87,5 +81,4 @@ TEST(Dispatcher, ForwardConfig) {
   EXPECT_EQ(recv_msg, "OK-" + msg);
 
   EXPECT_EQ(0, dispatcher.Close(tls_fd));
-  freeaddrinfo(res);
 }

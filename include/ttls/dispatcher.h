@@ -33,7 +33,6 @@ class Dispatcher final {
   const nlohmann::json& Conf() const noexcept;
   std::mutex mtx_;
 
-  std::unordered_set<std::string> tls_addrs_;
   std::unordered_set<int> tls_fds_;
   std::unique_ptr<nlohmann::json> config_;
   SocketPtr raw_;

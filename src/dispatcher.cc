@@ -20,12 +20,6 @@ Dispatcher::Dispatcher(std::string_view config, const SocketPtr& raw, const Sock
   // parse config
   try {
     config_ = std::make_unique<nlohmann::json>(nlohmann::json::parse(config));
-
-    std::vector<std::string> v = (*config_)["tls"];
-    std::copy(v.cbegin(),
-              v.cend(),
-              std::inserter(tls_addrs_, tls_addrs_.end()));
-
   } catch (const nlohmann::json::exception& e) {
     throw std::runtime_error("dispatcher: cannot parse config: "s + e.what());
   }
@@ -48,7 +42,8 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
   std::string ip_port = ip_buf + ":" + port_buf;
 
   // 2. check if not in json --> raw_->Connect(...)
-  if (tls_addrs_.find(ip_port) == tls_addrs_.cend())
+  auto res = std::find(Conf()["tls"].cbegin(), Conf()["tls"].cend(), ip_port);
+  if (res == Conf()["tls"].cend())
     return raw_->Connect(sockfd, addr, addrlen);
 
   // 3. else --> save fd + tls_->Connect(...)

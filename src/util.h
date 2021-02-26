@@ -6,6 +6,6 @@
 
 namespace edgeless::ttls {
 
-sockaddr_in MakeSockaddr(std::string_view ip, uint16_t port);
+sockaddr MakeSockaddr(std::string_view ip, uint16_t port);
 
 }  // namespace edgeless::ttls
