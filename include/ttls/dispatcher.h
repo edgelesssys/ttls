@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <nlohmann/json_fwd.hpp>
 #include <string_view>
+#include <unordered_set>
 
 #include "socket.h"
 
@@ -29,7 +31,9 @@ class Dispatcher final {
 
  private:
   const nlohmann::json& Conf() const noexcept;
+  std::mutex mtx_;
 
+  std::unordered_set<int> tls_fds_;
   std::unique_ptr<nlohmann::json> config_;
   SocketPtr raw_;
   SocketPtr tls_;
