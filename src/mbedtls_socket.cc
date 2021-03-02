@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include <array>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -79,10 +80,18 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
   CheckResult(mbedtls_ssl_setup(&ssl, &conf_));
   CheckResult(mbedtls_ssl_set_hostname(&ssl, "localhost"));
 
-  CheckResult(connect(server_fd.fd, addr, addrlen));
+  connect(server_fd.fd, addr, addrlen);
 
   mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, nullptr);
-  CheckResult(mbedtls_ssl_handshake(&ssl));
+
+  int re = -1;
+  do {
+    re = mbedtls_ssl_handshake(&ssl);
+    if (re == MBEDTLS_ERR_SSL_WANT_READ || re == MBEDTLS_ERR_SSL_WANT_WRITE) {
+      continue;
+    }
+    CheckResult(re);
+  } while (re != 0);
 
   return 0;
 }
@@ -93,7 +102,17 @@ ssize_t MbedtlsSocket::Recv(int sockfd, void* buf, size_t len, int /*flags*/) {
     return contexts_.at(sockfd).first;
   }
   ();
-  return CheckResult(mbedtls_ssl_read(&ssl, static_cast<unsigned char*>(buf), len));
+
+  int ret = -1;
+  do {
+    ret = mbedtls_ssl_read(&ssl, static_cast<unsigned char*>(buf), len);
+    if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+      break;
+    }
+  } while (true);
+
+  CheckResult(ret);
+  return ret;
 }
 
 ssize_t MbedtlsSocket::Send(int sockfd, const void* buf, size_t len, int /*flags*/) {
