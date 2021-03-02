@@ -14,5 +14,5 @@ func main() {
 
 	http.HandleFunc("/", hello)
 
-	http.ListenAndServeTLS(":9000", "cert.pem", "key.pem", nil)
+	http.ListenAndServeTLS(":9000", "certs.pem", "server.key", nil)
 }
