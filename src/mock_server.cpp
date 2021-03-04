@@ -307,6 +307,6 @@ exit:
   mbedtls_ctr_drbg_free(&ctr_drbg);
   mbedtls_entropy_free(&entropy);
 
-  mbedtls_exit(ret);
+  return ret;
 }
 }  // namespace edgeless::ttls

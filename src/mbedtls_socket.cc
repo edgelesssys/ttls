@@ -3,8 +3,10 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <unistd.h>
 
+#include <array>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -79,10 +81,24 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
   CheckResult(mbedtls_ssl_setup(&ssl, &conf_));
   CheckResult(mbedtls_ssl_set_hostname(&ssl, "localhost"));
 
-  CheckResult(connect(server_fd.fd, addr, addrlen));
+  if (connect(server_fd.fd, addr, addrlen) && errno != EINPROGRESS) {
+    throw std::runtime_error("connect failed");
+  }
 
   mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, nullptr);
-  CheckResult(mbedtls_ssl_handshake(&ssl));
+
+  pollfd pfd{server_fd.fd, POLLOUT | POLLIN, 0};
+  int re = -1;
+  do {
+    if (poll(&pfd, 1, -1) < 0)
+      throw std::runtime_error("socket unavailable");
+
+    re = mbedtls_ssl_handshake(&ssl);
+    if (re == MBEDTLS_ERR_SSL_WANT_READ || re == MBEDTLS_ERR_SSL_WANT_WRITE) {
+      continue;
+    }
+    CheckResult(re);
+  } while (re != 0);
 
   return 0;
 }
