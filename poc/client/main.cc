@@ -39,13 +39,13 @@ static long (*syscall_func)(long int __sysno, ...);
 
 int dispatch(long rax, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) {
   switch (rax) {
-    case 42:
+    case SYS_connect:
       return connect_hook(arg1, reinterpret_cast<sockaddr*>(arg2), arg3);
-    case 1:
+    case SYS_write:
       return send_hook(arg1, reinterpret_cast<void*>(arg2), arg3, arg4);
-    case 0:
+    case SYS_read:
       return recv_hook(arg1, reinterpret_cast<void*>(arg2), arg3, arg4);
-    case 3:
+    case SYS_close:
       return close_hook(arg1);
   }
   return (*syscall_func)(rax, arg1, arg2, arg3, arg4, arg5, arg6);

@@ -36,8 +36,8 @@ TEST(Mbedtls, Connect) {
 
   MbedtlsSocket sock;
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
-  EXPECT_EQ(0, sock.Close(fd));
+  ASSERT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
+  ASSERT_EQ(0, sock.Close(fd));
   t1.join();
 }
 
@@ -49,8 +49,8 @@ TEST(Mbedtls, ConnectNonBlock) {
 
   MbedtlsSocket sock;
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
-  EXPECT_EQ(0, sock.Close(fd));
+  ASSERT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
+  ASSERT_EQ(0, sock.Close(fd));
   t1.join();
 }
 
@@ -62,13 +62,13 @@ TEST(Mbedtls, SendAndRecieve) {
 
   MbedtlsSocket sock;
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
-  EXPECT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
+  ASSERT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
+  ASSERT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
 
   std::string buf(4096, ' ');
-  EXPECT_GT(sock.Recv(fd, buf.data(), buf.size(), 0), 0);
-  EXPECT_EQ(buf.substr(9, 6), "200 OK");
-  EXPECT_EQ(0, sock.Close(fd));
+  ASSERT_GT(sock.Recv(fd, buf.data(), buf.size(), 0), 0);
+  ASSERT_EQ(buf.substr(9, 6), "200 OK");
+  ASSERT_EQ(0, sock.Close(fd));
   t1.join();
 }
 
@@ -80,12 +80,21 @@ TEST(Mbedtls, SendAndRecieveNonBlock) {
 
   MbedtlsSocket sock;
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
-  EXPECT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
+  ASSERT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
+  ASSERT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
 
   std::string buf(4096, ' ');
-  EXPECT_GT(sock.Recv(fd, buf.data(), buf.size(), 0), 0);
-  EXPECT_EQ(buf.substr(9, 6), "200 OK");
-  EXPECT_EQ(0, sock.Close(fd));
+  //EXPECT_GT(sock.Recv(fd, buf.data(), buf.size(), 0), 0);
+  int ret = -1;
+  do {
+    try {
+      ret = sock.Recv(fd, buf.data(), buf.size(), 0);
+    } catch (const std::exception& e) {
+    }
+  } while (ret == -1 && errno == EAGAIN);
+
+  ASSERT_GT(ret, 0);
+  ASSERT_EQ(buf.substr(9, 6), "200 OK");
+  ASSERT_EQ(0, sock.Close(fd));
   t1.join();
 }

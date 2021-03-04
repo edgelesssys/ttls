@@ -80,7 +80,9 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
   CheckResult(mbedtls_ssl_setup(&ssl, &conf_));
   CheckResult(mbedtls_ssl_set_hostname(&ssl, "localhost"));
 
-  connect(server_fd.fd, addr, addrlen);
+  if (connect(server_fd.fd, addr, addrlen) && errno != EINPROGRESS) {
+    throw std::runtime_error("connect failed");
+  }
 
   mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, nullptr);
 
@@ -102,17 +104,7 @@ ssize_t MbedtlsSocket::Recv(int sockfd, void* buf, size_t len, int /*flags*/) {
     return contexts_.at(sockfd).first;
   }
   ();
-
-  int ret = -1;
-  do {
-    ret = mbedtls_ssl_read(&ssl, static_cast<unsigned char*>(buf), len);
-    if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-      break;
-    }
-  } while (true);
-
-  CheckResult(ret);
-  return ret;
+  return CheckResult(mbedtls_ssl_read(&ssl, static_cast<unsigned char*>(buf), len));
 }
 
 ssize_t MbedtlsSocket::Send(int sockfd, const void* buf, size_t len, int /*flags*/) {

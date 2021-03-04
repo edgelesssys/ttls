@@ -36,7 +36,7 @@ add_custom_target(
 
 add_executable(client main.cc)
 target_include_directories(client
-  PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  PRIVATE ${CMAKE_SOURCE_DIR}/include ../../include)
 add_dependencies(client app)
 
 target_link_libraries(plt dl)
