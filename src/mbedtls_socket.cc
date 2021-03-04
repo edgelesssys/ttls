@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <unistd.h>
 
 #include <array>
@@ -86,8 +87,14 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
 
   mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, nullptr);
 
+  std::array<pollfd, 1> pfd{};
+  pfd[0] = pollfd{server_fd.fd, POLLOUT | POLLIN, 0};
+
   int re = -1;
   do {
+    if (poll(pfd.data(), 1, -1) < 0)
+      throw std::runtime_error("socket unavailable");
+
     re = mbedtls_ssl_handshake(&ssl);
     if (re == MBEDTLS_ERR_SSL_WANT_READ || re == MBEDTLS_ERR_SSL_WANT_WRITE) {
       continue;
