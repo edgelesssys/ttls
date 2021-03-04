@@ -84,7 +84,7 @@ TEST(Mbedtls, SendAndRecieveNonBlock) {
   ASSERT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
 
   std::string buf(4096, ' ');
-  //EXPECT_GT(sock.Recv(fd, buf.data(), buf.size(), 0), 0);
+
   int ret = -1;
   do {
     try {
