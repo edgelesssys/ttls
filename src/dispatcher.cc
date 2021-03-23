@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "mbedtls_socket.h"
+
 using namespace edgeless::ttls;
 using namespace std::string_literals;
 
@@ -17,7 +19,7 @@ bool Dispatcher::IsTls(int sockfd) {
   return tls_fds_.find(sockfd) != tls_fds_.cend();
 }
 
-Dispatcher::Dispatcher(std::string_view config, const SocketPtr& raw, const SocketPtr& tls)
+Dispatcher::Dispatcher(std::string_view config, const SocketPtr& raw, const MbedtlsSockPtr& tls)
     : raw_(raw), tls_(tls) {
   assert(raw);
   assert(tls);
@@ -47,8 +49,7 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
   std::string ip_port = ip_buf + ":" + port_buf;
 
   // 2. check if not in json --> raw_->Connect(...)
-  auto res = std::find(Conf()["tls"].cbegin(), Conf()["tls"].cend(), ip_port);
-  if (res == Conf()["tls"].cend())
+  if (Conf()["tls"].find(ip_port) == Conf()["tls"].cend())
     return raw_->Connect(sockfd, addr, addrlen);
 
   // 3. else --> save fd + tls_->Connect(...)
@@ -57,7 +58,7 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
       std::lock_guard<std::mutex> lock(mtx_);
       tls_fds_.insert(sockfd);
     }
-    return tls_->Connect(sockfd, addr, addrlen);
+    return tls_->Connect(sockfd, addr, addrlen, Conf()["tls"][ip_port]);
   } catch (const std::runtime_error&) {
     return -1;
   }

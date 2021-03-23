@@ -6,6 +6,7 @@
 #include <string_view>
 #include <unordered_set>
 
+#include "mbedtls_socket.h"
 #include "socket.h"
 
 namespace edgeless::ttls {
@@ -19,7 +20,7 @@ class Dispatcher final {
    * @param raw Socket functions that will be used if connection should not be wrapped.
    * @param tls Socket functions that will be used if connection should be wrapped.
    */
-  Dispatcher(std::string_view config, const SocketPtr& raw, const SocketPtr& tls);
+  Dispatcher(std::string_view config, const SocketPtr& raw, const MbedtlsSockPtr& tls);
 
   ~Dispatcher();
 
@@ -32,12 +33,13 @@ class Dispatcher final {
 
  private:
   const nlohmann::json& Conf() const noexcept;
+  bool IsTls(int sockfd);
   std::mutex mtx_;
 
   std::unordered_set<int> tls_fds_;
   std::unique_ptr<nlohmann::json> config_;
   SocketPtr raw_;
-  SocketPtr tls_;
+  MbedtlsSockPtr tls_;
 };
 
 }  // namespace edgeless::ttls

@@ -18,6 +18,7 @@ class MbedtlsSocket : public Socket {
 
   int Close(int sockfd) override;
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) override;
+  virtual int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& ca_crt);
   ssize_t Recv(int sockfd, void* buf, size_t len, int flags) override;
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags) override;
   int Shutdown(int sockfd, int how) override;
@@ -39,5 +40,7 @@ class MbedtlsSocket : public Socket {
   mbedtls_ctr_drbg_context ctr_drbg_;
   mbedtls_entropy_context entropy_;
 };
+
+typedef std::shared_ptr<MbedtlsSocket> MbedtlsSockPtr;
 
 }  // namespace edgeless::ttls
