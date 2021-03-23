@@ -115,7 +115,12 @@ int MbedtlsSocket::Shutdown(int sockfd, int how) {
   return 0;
 }
 
-int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
+int MbedtlsSocket::Connect(int /*sockfd*/, const sockaddr* /*addr*/, socklen_t /*addrlen*/) {
+  throw std::runtime_error("no crt provided");
+  return -1;
+}
+
+int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& ca_crt) {
   const auto ret = [&] {
     std::lock_guard<std::mutex> lock(mtx_);
     return contexts_.try_emplace(sockfd);
@@ -136,7 +141,8 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) 
                                           MBEDTLS_SSL_PRESET_DEFAULT));
   mbedtls_ssl_conf_rng(&ctx.conf, mbedtls_ctr_drbg_random, &ctr_drbg_);
 
-  CheckResult(mbedtls_x509_crt_parse_file(ctx.cacerts, "ca.crt"));
+  //CheckResult(mbedtls_x509_crt_parse_file(ctx.cacerts, "ca.crt"));
+  CheckResult(mbedtls_x509_crt_parse(&ctx.cacerts, reinterpret_cast<const unsigned char*>(ca_crt.data()), ca_crt.size() + 1));
   mbedtls_ssl_conf_ca_chain(&ctx.conf, &ctx.cacerts, nullptr);
   mbedtls_ssl_conf_authmode(&ctx.conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 

@@ -50,7 +50,7 @@ TEST(Dispatcher, ForwardConfig) {
   const auto tls = std::make_shared<MockSocket>();
   const int tls_fd = 4;
 
-  Dispatcher dispatcher(R"({"tls":["127.0.0.1:443", "192.168.0.1:80"]})", raw, tls);
+  Dispatcher dispatcher(R"({"tls":{"127.0.0.1:443": "CA_CRT" , "192.168.0.1:80": "DIFF_CA_CRT"}})", raw, tls);
 
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 443);
 
@@ -62,6 +62,7 @@ TEST(Dispatcher, ForwardConfig) {
   const auto& args = tls->connections.at(tls_fd);
   EXPECT_EQ(&sock_addr, args.addr);
   EXPECT_EQ(sizeof(sock_addr), args.addrlen);
+  EXPECT_EQ("CA_CRT", args.ca_crt);
 
   // expect call is not forwarded to raw function
   EXPECT_TRUE(raw->connections.empty());
