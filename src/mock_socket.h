@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ttls/socket.h>
+#include <ttls/mbedtls_socket.h>
 
 #include <algorithm>
 #include <string>
@@ -12,10 +12,11 @@ namespace edgeless::ttls {
 struct Connection {
   const sockaddr* addr{};
   socklen_t addrlen{};
+  std::string ca_crt{};
   std::vector<char> msg_buf{};
 };
 
-struct MockSocket : Socket {
+struct MockSocket : MbedtlsSocket {
   std::unordered_map<int, Connection> connections;
 
   int Close(int fd) override {
@@ -24,8 +25,18 @@ struct MockSocket : Socket {
     return 0;
   }
 
+  int Shutdown(int /*fd*/, int /*how*/) override {
+    return 0;
+  }
+
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) override {
     if (!connections.try_emplace(sockfd, Connection{addr, addrlen}).second)
+      return -1;
+    return 0;
+  }
+
+  int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& ca_crt) override {
+    if (!connections.try_emplace(sockfd, Connection{addr, addrlen, ca_crt}).second)
       return -1;
     return 0;
   }

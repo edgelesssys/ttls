@@ -12,6 +12,11 @@
 using namespace edgeless::ttls;
 using namespace std::string_literals;
 
+bool Dispatcher::IsTls(int sockfd) {
+  const std::lock_guard<std::mutex> lock(mtx_);
+  return tls_fds_.find(sockfd) != tls_fds_.cend();
+}
+
 Dispatcher::Dispatcher(std::string_view config, const SocketPtr& raw, const SocketPtr& tls)
     : raw_(raw), tls_(tls) {
   assert(raw);
@@ -60,11 +65,9 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
 
 ssize_t Dispatcher::Recv(int sockfd, void* buf, size_t len, int flags) {
   // when fd unknown -> raw->Recv()
-  {
-    std::lock_guard<std::mutex> lock(mtx_);
-    if (tls_fds_.find(sockfd) == tls_fds_.cend())
-      return raw_->Recv(sockfd, buf, len, flags);
-  }
+  if (!IsTls(sockfd))
+    return raw_->Recv(sockfd, buf, len, flags);
+
   try {
     return tls_->Recv(sockfd, buf, len, flags);
   } catch (const std::runtime_error&) {
@@ -73,11 +76,8 @@ ssize_t Dispatcher::Recv(int sockfd, void* buf, size_t len, int flags) {
 }
 
 ssize_t Dispatcher::Send(int sockfd, const void* buf, size_t len, int flags) {
-  {
-    std::lock_guard<std::mutex> lock(mtx_);
-    if (tls_fds_.find(sockfd) == tls_fds_.cend())
-      return raw_->Send(sockfd, buf, len, flags);
-  }
+  if (!IsTls(sockfd))
+    return raw_->Send(sockfd, buf, len, flags);
 
   try {
     return tls_->Send(sockfd, buf, len, flags);
@@ -86,9 +86,20 @@ ssize_t Dispatcher::Send(int sockfd, const void* buf, size_t len, int flags) {
   }
 }
 
+int Dispatcher::Shutdown(int sockfd, int how) {
+  if (!IsTls(sockfd))
+    return raw_->Shutdown(sockfd, how);
+
+  try {
+    tls_->Shutdown(sockfd, how);
+    return 0;
+  } catch (const std::runtime_error&) {
+    return -1;
+  }
+}
+
 int Dispatcher::Close(int sockfd) {
-  std::lock_guard<std::mutex> lock(mtx_);
-  if (tls_fds_.find(sockfd) == tls_fds_.cend())
+  if (!IsTls(sockfd))
     return raw_->Close(sockfd);
 
   try {

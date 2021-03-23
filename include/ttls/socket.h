@@ -14,6 +14,7 @@ class Socket {
   virtual int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) = 0;
   virtual ssize_t Recv(int sockfd, void* buf, size_t len, int flags) = 0;
   virtual ssize_t Send(int sockfd, const void* buf, size_t len, int flags) = 0;
+  virtual int Shutdown(int sockfd, int how) = 0;
 };
 
 typedef std::shared_ptr<Socket> SocketPtr;

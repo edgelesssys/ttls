@@ -9,22 +9,33 @@
 #include "socket.h"
 
 namespace edgeless::ttls {
+
 class MbedtlsSocket : public Socket {
  public:
   MbedtlsSocket();
+  explicit MbedtlsSocket(const SocketPtr& sock_);
   ~MbedtlsSocket() override;
 
   int Close(int sockfd) override;
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) override;
   ssize_t Recv(int sockfd, void* buf, size_t len, int flags) override;
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags) override;
+  int Shutdown(int sockfd, int how) override;
 
  private:
+  static int sock_net_send(void* ctx, const unsigned char* buf, size_t len);
+  static int sock_net_recv(void* ctx, unsigned char* buf, size_t len);
+  struct Context {
+    mbedtls_ssl_config conf{};
+    mbedtls_ssl_context ssl{};
+    mbedtls_net_context net{};
+    mbedtls_x509_crt cacerts{};
+    SocketPtr sock{};
+  };
   std::mutex mtx_;
-  std::unordered_map<int, std::pair<mbedtls_ssl_context, mbedtls_net_context>> contexts_;
+  std::unordered_map<int, Context> contexts_;
+  SocketPtr sock_;
 
-  mbedtls_ssl_config conf_;
-  mbedtls_x509_crt cacert_;
   mbedtls_ctr_drbg_context ctr_drbg_;
   mbedtls_entropy_context entropy_;
 };

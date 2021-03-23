@@ -40,6 +40,7 @@ TEST(Dispatcher, EmptyConfig) {
   EXPECT_EQ(&sock_addr, args.addr);
   EXPECT_EQ(sizeof(sock_addr), args.addrlen);
 
+  EXPECT_EQ(0, dispatcher.Shutdown(tls_fd, 2));
   EXPECT_EQ(0, dispatcher.Close(tls_fd));
   EXPECT_EQ(0, raw->connections.size());
 }
@@ -80,5 +81,6 @@ TEST(Dispatcher, ForwardConfig) {
   // expect data is received
   EXPECT_EQ(recv_msg, "OK-" + msg);
 
+  EXPECT_EQ(0, dispatcher.Shutdown(tls_fd, 2));
   EXPECT_EQ(0, dispatcher.Close(tls_fd));
 }

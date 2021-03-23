@@ -38,7 +38,10 @@ set_target_properties(ttls_test_notidy PROPERTIES CXX_CLANG_TIDY "")
 add_library(ttls
   src/dispatcher.cc
   src/mbedtls_socket.cc
-  src/raw_socket.cc)
+  src/libc_socket.cc
+  $<TARGET_OBJECTS:ttls_test_notidy>)
+
+set_property(TARGET ttls PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(ttls
   PUBLIC include

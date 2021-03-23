@@ -28,6 +28,7 @@ class Dispatcher final {
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen);
   ssize_t Recv(int sockfd, void* buf, size_t len, int flags);
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags);
+  int Shutdown(int sockfd, int how);
 
  private:
   const nlohmann::json& Conf() const noexcept;
