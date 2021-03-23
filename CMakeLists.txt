@@ -7,7 +7,7 @@ endif()
 
 execute_process(
   COMMAND git submodule update --init 3rdparty/googletest
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -17,6 +17,19 @@ set(GOOGLETEST_VERSION 1.10.0)
 add_subdirectory(3rdparty/googletest/googletest)
 
 set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
+
+add_library(ttls_test_notidy OBJECT
+  src/test_server.cpp)
+
+#
+# test server
+#
+target_include_directories(ttls_test_notidy
+  PUBLIC include
+  PRIVATE include/ttls)
+set_property(TARGET ttls_test_notidy PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+set_target_properties(ttls_test_notidy PROPERTIES CXX_CLANG_TIDY "")
 
 #
 # ttls library
@@ -34,31 +47,14 @@ target_include_directories(ttls
 #
 # test
 #
-add_custom_command(
-  OUTPUT server.crt
-  COMMAND openssl req -x509 -newkey rsa:4096 -nodes -keyout ca.key -out ca.crt -days 365
-  -subj "/C=US/ST=State/L=City/O=Org/OU=Org/CN=Test CA"
-  -addext "subjectAltName = DNS:localhost"
-  COMMAND openssl req -new -newkey rsa:4096 -nodes -keyout server.key -out server.csr -days 365
-  -subj "/C=US/ST=State/L=City/O=Org/OU=Org/CN=localhost"
-  -addext "subjectAltName = DNS:localhost"
-  COMMAND openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
-)
-add_custom_target(certs DEPENDS server.crt)
 
 add_executable(ttls_test
   src/dispatcher_test.cc
   src/mbedtls_test.cc
   src/util.cc)
 
-add_library(ttls_test_notidy
-  src/mock_server.cpp)
+target_link_libraries(ttls_test ttls gtest_main mbedtls mbedx509 mbedcrypto)
 
-set_target_properties(ttls_test_notidy PROPERTIES CXX_CLANG_TIDY "")
-
-add_dependencies(ttls_test certs)
-
-target_link_libraries(ttls_test ttls_test_notidy ttls gtest_main mbedtls mbedx509 mbedcrypto)
 
 include(GoogleTest)
 enable_testing()
