@@ -16,10 +16,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#include "test_server.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-#include <condition_variable>
 
 #include "mbedtls/certs.h"
 #include "mbedtls/config.h"
@@ -83,19 +83,22 @@ int server(std::mutex& m, std::condition_variable& cv, bool& ready) {
      * Instead, you may want to use mbedtls_x509_crt_parse_file() to read the
      * server and CA certificates, as well as mbedtls_pk_parse_keyfile().
      */
-  ret = mbedtls_x509_crt_parse_file(&srvcert, "server.crt");
+  ret = mbedtls_x509_crt_parse(&srvcert, (const unsigned char*)SERVER_CRT.data(),
+                               SERVER_CRT.size() + 1);
   if (ret != 0) {
     mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret);
     goto exit;
   }
 
-  ret = mbedtls_x509_crt_parse_file(&srvcert, "ca.crt");
+  ret = mbedtls_x509_crt_parse(&srvcert, (const unsigned char*)CA_CRT.data(),
+                               CA_CRT.size() + 1);
   if (ret != 0) {
     mbedtls_printf(" failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret);
     goto exit;
   }
 
-  ret = mbedtls_pk_parse_keyfile(&pkey, "server.key", NULL);
+  ret = mbedtls_pk_parse_key(&pkey, (const unsigned char*)SERVER_KEY.data(),
+                             SERVER_KEY.size() + 1, nullptr, 0);
   if (ret != 0) {
     mbedtls_printf(" failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret);
     goto exit;
@@ -309,4 +312,18 @@ exit:
 
   return ret;
 }
+
+std::thread StartTestServer() {
+  std::mutex m;
+  std::condition_variable cv;
+  bool ready = false;
+
+  std::thread t1(server, std::ref(m), std::ref(cv), std::ref(ready));
+  {
+    std::unique_lock<std::mutex> lk(m);
+    cv.wait(lk, [&] { return ready; });
+  }
+  return t1;
+}
+
 }  // namespace edgeless::ttls
