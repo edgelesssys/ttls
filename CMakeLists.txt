@@ -18,28 +18,16 @@ add_subdirectory(3rdparty/googletest/googletest)
 
 set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
 
-add_library(ttls_test_notidy OBJECT
-  src/test_server.cpp)
-
-#
-# test server
-#
-target_include_directories(ttls_test_notidy
-  PUBLIC include
-  PRIVATE include/ttls)
-set_property(TARGET ttls_test_notidy PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-set_target_properties(ttls_test_notidy PROPERTIES CXX_CLANG_TIDY "")
-
 #
 # ttls library
 #
 
 add_library(ttls
   src/dispatcher.cc
-  src/mbedtls_socket.cc
   src/libc_socket.cc
-  $<TARGET_OBJECTS:ttls_test_notidy>)
+  src/mbedtls_socket.cc
+  src/test_server.cc
+  3rdparty/mbedtls/ssl_server.c)
 
 set_property(TARGET ttls PROPERTY POSITION_INDEPENDENT_CODE ON)
 
