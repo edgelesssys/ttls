@@ -1,6 +1,3 @@
-// Copyright (c) Edgeless Systems GmbH.
-// Licensed under the MIT License.
-
 #include <plthook/plthook.h>
 #include <sys/syscall.h>
 #include <ttls/ttls.h>
