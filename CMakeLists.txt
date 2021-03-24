@@ -5,18 +5,20 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-execute_process(
-  COMMAND git submodule update --init 3rdparty/googletest
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra -pedantic -Werror)
 
-set(GOOGLETEST_VERSION 1.10.0)
-add_subdirectory(3rdparty/googletest/googletest)
+if(NOT TTLS_NOTEST)
+  execute_process(
+    COMMAND git submodule update --init 3rdparty/googletest
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
+  set(GOOGLETEST_VERSION 1.10.0)
+  add_subdirectory(3rdparty/googletest/googletest)
+
+  set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
+endif()
 
 add_library(ttls_test_notidy OBJECT
   src/test_server.cpp)
@@ -51,14 +53,15 @@ target_include_directories(ttls
 # test
 #
 
-add_executable(ttls_test
-  src/dispatcher_test.cc
-  src/mbedtls_test.cc
-  src/util.cc)
+if(NOT TTLS_NOTEST)
+  add_executable(ttls_test
+    src/dispatcher_test.cc
+    src/mbedtls_test.cc
+    src/util.cc)
 
-target_link_libraries(ttls_test ttls gtest_main mbedtls mbedx509 mbedcrypto)
+  target_link_libraries(ttls_test ttls gtest_main mbedtls mbedx509 mbedcrypto)
 
-
-include(GoogleTest)
-enable_testing()
-gtest_discover_tests(ttls_test)
+  include(GoogleTest)
+  enable_testing()
+  gtest_discover_tests(ttls_test)
+endif()
