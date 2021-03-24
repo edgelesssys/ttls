@@ -2,7 +2,11 @@
  *  SSL server demonstration program
  *
  *  Copyright The Mbed TLS Contributors
+ *  Copyright Edgeless Systems GmbH
  *  SPDX-License-Identifier: Apache-2.0
+ *
+ *  NOTE: This file is a modified version from the one of the Mbed TLS
+ *  project. Changes are needed to use the SSL server within a unit test.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use this file except in compliance with the License.
@@ -92,7 +96,7 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
-int main( void )
+int edgeless_ttls_test_server( void notify(void*), void* event, const char* srv_crt, const char* cas_pem, const char* srv_key )
 {
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
@@ -136,24 +140,24 @@ int main( void )
      * Instead, you may want to use mbedtls_x509_crt_parse_file() to read the
      * server and CA certificates, as well as mbedtls_pk_parse_keyfile().
      */
-    ret = mbedtls_x509_crt_parse( &srvcert, (const unsigned char *) mbedtls_test_srv_crt,
-                          mbedtls_test_srv_crt_len );
+    ret = mbedtls_x509_crt_parse( &srvcert, (const unsigned char *) srv_crt,
+                          strlen(srv_crt)+1 );
     if( ret != 0 )
     {
         mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret );
         goto exit;
     }
 
-    ret = mbedtls_x509_crt_parse( &srvcert, (const unsigned char *) mbedtls_test_cas_pem,
-                          mbedtls_test_cas_pem_len );
+    ret = mbedtls_x509_crt_parse( &srvcert, (const unsigned char *) cas_pem,
+                          strlen(cas_pem)+1 );
     if( ret != 0 )
     {
         mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret );
         goto exit;
     }
 
-    ret =  mbedtls_pk_parse_key( &pkey, (const unsigned char *) mbedtls_test_srv_key,
-                         mbedtls_test_srv_key_len, NULL, 0 );
+    ret =  mbedtls_pk_parse_key( &pkey, (const unsigned char *) srv_key,
+                         strlen(srv_key)+1, NULL, 0 );
     if( ret != 0 )
     {
         mbedtls_printf( " failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret );
@@ -165,10 +169,10 @@ int main( void )
     /*
      * 2. Setup the listening TCP socket
      */
-    mbedtls_printf( "  . Bind on https://localhost:4433/ ..." );
+    mbedtls_printf( "  . Bind on https://localhost:9000/ ..." );
     fflush( stdout );
 
-    if( ( ret = mbedtls_net_bind( &listen_fd, NULL, "4433", MBEDTLS_NET_PROTO_TCP ) ) != 0 )
+    if( ( ret = mbedtls_net_bind( &listen_fd, NULL, "9000", MBEDTLS_NET_PROTO_TCP ) ) != 0 )
     {
         mbedtls_printf( " failed\n  ! mbedtls_net_bind returned %d\n\n", ret );
         goto exit;
@@ -251,6 +255,9 @@ reset:
     mbedtls_printf( "  . Waiting for a remote connection ..." );
     fflush( stdout );
 
+    // EDG: Signal that setup is completed
+    notify( event );
+
     if( ( ret = mbedtls_net_accept( &listen_fd, &client_fd,
                                     NULL, 0, NULL ) ) != 0 )
     {
@@ -279,6 +286,7 @@ reset:
 
     mbedtls_printf( " ok\n" );
 
+soft_reset:
     /*
      * 6. Read the HTTP Request
      */
@@ -300,6 +308,8 @@ reset:
             {
                 case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
                     mbedtls_printf( " connection was closed gracefully\n" );
+                    ret = 0;
+                    goto exit;
                     break;
 
                 case MBEDTLS_ERR_NET_CONN_RESET:
@@ -351,6 +361,8 @@ reset:
 
     mbedtls_printf( "  . Closing the connection..." );
 
+    goto soft_reset;
+
     while( ( ret = mbedtls_ssl_close_notify( &ssl ) ) < 0 )
     {
         if( ret != MBEDTLS_ERR_SSL_WANT_READ &&
@@ -395,7 +407,7 @@ exit:
     fflush( stdout ); getchar();
 #endif
 
-    mbedtls_exit( ret );
+    return ret;
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_CERTS_C && MBEDTLS_ENTROPY_C &&
           MBEDTLS_SSL_TLS_C && MBEDTLS_SSL_SRV_C && MBEDTLS_NET_C &&
