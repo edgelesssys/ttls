@@ -44,7 +44,7 @@ add_library(ttls
 set_property(TARGET ttls PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(ttls
-  PUBLIC include
+  PUBLIC include 3rdparty/nlohmann/include
   PRIVATE include/ttls)
 
 #
