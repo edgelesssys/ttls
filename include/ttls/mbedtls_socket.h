@@ -1,11 +1,12 @@
 #pragma once
 
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/net_sockets.h>
+
 #include <mutex>
 #include <unordered_map>
 
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/net_sockets.h"
 #include "socket.h"
 
 namespace edgeless::ttls {
