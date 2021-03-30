@@ -24,7 +24,7 @@ TEST(Mbedtls, Connect) {
   MbedtlsSocket sock(libc_sock);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
   EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), CA_CRT), 0);
-  EXPECT_EQ(0, sock.Shutdown(fd, 2));
+  EXPECT_EQ(0, sock.Shutdown(fd, SHUT_RDWR));
   EXPECT_EQ(0, sock.Close(fd));
   t1.join();
 }
@@ -59,7 +59,7 @@ TEST(Mbedtls, SendAndRecieve) {
   std::string buf(4096, ' ');
   EXPECT_GT(sock.Recv(fd, buf.data(), buf.size(), 0), 0);
   EXPECT_EQ(buf.substr(9, 6), "200 OK");
-  EXPECT_EQ(0, sock.Shutdown(fd, 2));
+  EXPECT_EQ(0, sock.Shutdown(fd, SHUT_RDWR));
   EXPECT_EQ(0, sock.Close(fd));
   t1.join();
 }
@@ -88,7 +88,7 @@ TEST(Mbedtls, SendAndRecieveNonBlock) {
 
   EXPECT_GT(ret, 0);
   EXPECT_EQ(buf.substr(9, 6), "200 OK");
-  EXPECT_EQ(0, sock.Shutdown(fd, 2));
+  EXPECT_EQ(0, sock.Shutdown(fd, SHUT_RDWR));
   EXPECT_EQ(0, sock.Close(fd));
   t1.join();
 }
