@@ -4,9 +4,7 @@ mkdir build && cd build
 cmake ..
 make
 ```
-
-Before running the client, copy the server's CA certificate in the build directory. Then execute the client:
+## Run
 ```bash
-cp ../../server/ca.crt .
 ./client
 ```
