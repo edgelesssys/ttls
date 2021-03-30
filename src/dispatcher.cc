@@ -105,7 +105,10 @@ int Dispatcher::Close(int sockfd) {
 
   try {
     tls_->Close(sockfd);
-    tls_fds_.erase(sockfd);
+    {
+      std::lock_guard<std::mutex> lock(mtx_);
+      tls_fds_.erase(sockfd);
+    }
     return 0;
   } catch (const std::runtime_error&) {
     return -1;
