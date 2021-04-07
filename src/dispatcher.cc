@@ -24,9 +24,19 @@ Dispatcher::Dispatcher(std::string_view config, const SocketPtr& raw, const Mbed
   assert(raw);
   assert(tls);
 
+  //escape \r\n to \\r\\n
+  std::string conf{config};
+  size_t pos = 0;
+  while ((pos = conf.find('\r')) != std::string::npos) {
+    conf.replace(pos, 1, "\\r");
+  }
+  while ((pos = conf.find('\n')) != std::string::npos) {
+    conf.replace(pos, 1, "\\n");
+  }
+
   // parse config
   try {
-    config_ = std::make_unique<nlohmann::json>(nlohmann::json::parse(config));
+    config_ = std::make_unique<nlohmann::json>(nlohmann::json::parse(conf));
   } catch (const nlohmann::json::exception& e) {
     throw std::runtime_error("dispatcher: cannot parse config: "s + e.what());
   }
