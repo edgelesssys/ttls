@@ -19,7 +19,7 @@ bool Dispatcher::IsTls(int sockfd) {
   return tls_fds_.find(sockfd) != tls_fds_.cend();
 }
 
-Dispatcher::Dispatcher(std::string_view config, const SocketPtr& raw, const MbedtlsSockPtr& tls)
+Dispatcher::Dispatcher(std::string_view config, const RawSockPtr& raw, const MbedtlsSockPtr& tls)
     : raw_(raw), tls_(tls) {
   assert(raw);
   assert(tls);
@@ -46,10 +46,13 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
 
   ip_buf = ip_buf.substr(0, ip_buf.find('\0'));
   port_buf = port_buf.substr(0, port_buf.find('\0'));
-  std::string ip_port = ip_buf + ":" + port_buf;
+  std::string domain_port = ip_buf + ":" + port_buf;
+  // prefer domains over IPs
+  if (ip_domain_.find(ip_buf) != ip_domain_.cend())
+    domain_port = ip_domain_.at(ip_buf) + ":" + port_buf;
 
   // 2. check if not in json --> raw_->Connect(...)
-  if (Conf()["tls"].find(ip_port) == Conf()["tls"].cend())
+  if (Conf()["tls"].find(domain_port) == Conf()["tls"].cend())
     return raw_->Connect(sockfd, addr, addrlen);
 
   // 3. else --> save fd + tls_->Connect(...)
@@ -58,7 +61,7 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
       std::lock_guard<std::mutex> lock(mtx_);
       tls_fds_.insert(sockfd);
     }
-    return tls_->Connect(sockfd, addr, addrlen, Conf()["tls"][ip_port]);
+    return tls_->Connect(sockfd, addr, addrlen, Conf()["tls"][domain_port]);
   } catch (const std::runtime_error&) {
     return -1;
   }
@@ -113,6 +116,37 @@ int Dispatcher::Close(int sockfd) {
   } catch (const std::runtime_error&) {
     return -1;
   }
+}
+
+int Dispatcher::Getaddrinfo(const char* node, const char* service, const addrinfo* hints, addrinfo** res) {
+  // TODO: Check if service/port is ever used
+  // [pid 108970] client->getaddrinfo("google.de", nil, 0xc00009c090, 0xc0000a4010)                       = 0
+
+  for (auto& el : Conf()["tls"].items()) {
+    std::string domain = el.key().substr(0, el.key().find(':'));
+
+    if (std::string(node) == domain) {
+      // get all IPs
+      int ret = raw_->Getaddrinfo(node, service, hints, res);
+      if (ret != 0) {
+        return ret;
+      }
+      // save all (IPs, domain) in ip_domain_
+      addrinfo* rp = nullptr;
+      for (rp = *res; rp != nullptr; rp = rp->ai_next) {
+        //parse ip out of sockaddr
+        std::string ip_buf(NI_MAXHOST, ' ');
+        ret = getnameinfo(rp->ai_addr, rp->ai_addrlen, ip_buf.data(), NI_MAXHOST, nullptr, 0, NI_NUMERICHOST);
+        ip_buf = ip_buf.substr(0, ip_buf.find('\0'));
+        if (ret != 0) {
+          return -1;
+        }
+        ip_domain_.try_emplace(ip_buf, domain);
+      }
+      return 0;
+    }
+  }
+  return raw_->Getaddrinfo(node, service, hints, res);
 }
 
 const nlohmann::json& Dispatcher::Conf() const noexcept {

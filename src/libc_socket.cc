@@ -18,3 +18,6 @@ ssize_t LibcSocket::Send(int sockfd, const void* buf, size_t len, int /*flags*/)
 int LibcSocket::Shutdown(int sockfd, int how) {
   return shutdown(sockfd, how);
 }
+int LibcSocket::Getaddrinfo(const char* node, const char* service, const addrinfo* hints, addrinfo** res) {
+  return getaddrinfo(node, service, hints, res);
+}

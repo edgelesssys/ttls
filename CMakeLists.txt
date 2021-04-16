@@ -26,7 +26,6 @@ endif()
 
 add_library(ttls
   src/dispatcher.cc
-  src/libc_socket.cc
   src/mbedtls_socket.cc
   src/test_server.cc
   3rdparty/mbedtls/ssl_server.c)
@@ -43,6 +42,7 @@ target_include_directories(ttls
 
 if(NOT TTLS_NOTEST)
   add_executable(ttls_test
+    src/libc_socket.cc
     src/dispatcher_test.cc
     src/mbedtls_test.cc
     src/util.cc)

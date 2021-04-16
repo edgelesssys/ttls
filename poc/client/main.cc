@@ -12,6 +12,31 @@ void invokemain();
 
 using namespace std::string_literals;
 
+static long (*syscall_func)(long int __sysno, ...);
+static int (*getaddrinfo_func)(const char* node, const char* service, const addrinfo* hints, addrinfo** res);
+class Sock final : public edgeless::ttls::RawSocket {
+ public:
+  int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) override {
+    return connect(sockfd, addr, addrlen);
+  }
+  ssize_t Send(int sockfd, const void* buf, size_t len, int /*flags*/)
+      override {
+    return write(sockfd, buf, len);
+  }
+  ssize_t Recv(int sockfd, void* buf, size_t len, int /*flags*/) override {
+    return read(sockfd, buf, len);
+  }
+  int Shutdown(int fd, int how) override {
+    return shutdown(fd, how);
+  }
+  int Close(int fd) override {
+    return close(fd);
+  }
+  int Getaddrinfo(const char* node, const char* service, const addrinfo* hints, addrinfo** res) {
+    return (*getaddrinfo_func)(node, service, hints, res);
+  }
+};
+
 const std::string kCACrt =
     "-----BEGIN CERTIFICATE-----\\r\\n"
     "MIIFqzCCA5OgAwIBAgIUbBY17peevr4MypRtXYzUiJ1qVEgwDQYJKoZIhvcNAQEL\\r\\n"
@@ -47,9 +72,9 @@ const std::string kCACrt =
     "7Oe8km7JBDiS8Av4cPe9\\r\\n"
     "-----END CERTIFICATE-----\\r\\n";
 
-const auto kDispatcherConf = "{\"tls\":{\"127.0.0.1:9000\": \" " + kCACrt + " \" }}";
+const auto kDispatcherConf = "{\"tls\":{\"localhost:9000\": \" " + kCACrt + " \" }}";
 
-const auto raw = std::make_shared<edgeless::ttls::LibcSocket>();
+const auto raw = std::make_shared<Sock>();
 const auto tls = std::make_shared<edgeless::ttls::MbedtlsSocket>(raw);
 edgeless::ttls::Dispatcher dis(kDispatcherConf, raw, tls);
 
@@ -73,7 +98,9 @@ int close_hook(int fd) {
   return dis.Close(fd);
 }
 
-static long (*syscall_func)(long int __sysno, ...);
+int getaddrinfo_hook(const char* node, const char* service, const addrinfo* hints, addrinfo** res) {
+  return dis.Getaddrinfo(node, service, hints, res);
+}
 
 int dispatch(long rax, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) {
   switch (rax) {
@@ -99,6 +126,11 @@ int install_hooks() {
     return -1;
   }
   if (plthook_replace(plthook, "syscall", (void*)dispatch, (void**)&syscall_func) != 0) {
+    printf("plthook_replace error: %s\n", plthook_error());
+    plthook_close(plthook);
+    return -1;
+  }
+  if (plthook_replace(plthook, "getaddrinfo", (void*)getaddrinfo_hook, (void**)&getaddrinfo_func) != 0) {
     printf("plthook_replace error: %s\n", plthook_error());
     plthook_close(plthook);
     return -1;

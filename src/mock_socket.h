@@ -3,9 +3,12 @@
 #include <ttls/mbedtls_socket.h>
 
 #include <algorithm>
+#include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "util.h"
 
 namespace edgeless::ttls {
 
@@ -16,7 +19,7 @@ struct Connection {
   std::vector<char> msg_buf{};
 };
 
-struct MockSocket : MbedtlsSocket {
+struct MockSocket : MbedtlsSocket, RawSocket {
   std::unordered_map<int, Connection> connections;
 
   int Close(int fd) override {
@@ -58,6 +61,20 @@ struct MockSocket : MbedtlsSocket {
     const auto p = static_cast<const char*>(buf);
     v.insert(v.end(), p, p + len);
     return len;
+  }
+
+  int Getaddrinfo(const char* node, const char* /*service*/, const addrinfo* /*hints*/, addrinfo** res) override {
+    sockaddr addr{};
+    if (std::string(node) == "service.name") {
+      addr = MakeSockaddr("133.133.133.133", 0);
+    }
+    if (std::string(node) == "other.service.name") {
+      addr = MakeSockaddr("200.200.200.200", 0);
+    }
+    *res = new addrinfo{};
+    (*res)->ai_addr = new sockaddr(addr);
+    res[0]->ai_addrlen = sizeof(sockaddr);
+    return 0;
   }
 };
 

@@ -12,6 +12,7 @@ Checks: "*,\
 -cppcoreguidelines-pro-type-vararg,\
 -cppcoreguidelines-special-member-functions,\
 -fuchsia-default-arguments-calls,\
+-fuchsia-multiple-inheritance,\
 -fuchsia-statically-constructed-objects,\
 -google-build-using-namespace,\
 -google-readability-braces-around-statements,\
