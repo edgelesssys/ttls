@@ -38,7 +38,8 @@ class Dispatcher final {
  private:
   const nlohmann::json& Conf() const noexcept;
   bool IsTls(int sockfd);
-  std::mutex mtx_;
+  std::mutex fds_mtx_;
+  std::mutex domain_mtx_;
 
   std::unordered_map<std::string, std::string> ip_domain_;
   std::unordered_set<int> tls_fds_;

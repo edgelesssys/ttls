@@ -63,17 +63,21 @@ struct MockSocket : MbedtlsSocket, RawSocket {
     return len;
   }
 
+  sockaddr getaddrinfo_addr{};
+  addrinfo getaddrinfo_addrinfo{};
+
   int Getaddrinfo(const char* node, const char* /*service*/, const addrinfo* /*hints*/, addrinfo** res) override {
-    sockaddr addr{};
-    if (std::string(node) == "service.name") {
-      addr = MakeSockaddr("133.133.133.133", 0);
+    if (std::string_view(node) == "service.name") {
+      getaddrinfo_addr = MakeSockaddr("133.133.133.133", 0);
+    } else if (std::string_view(node) == "other.service.name") {
+      getaddrinfo_addr = MakeSockaddr("200.200.200.200", 0);
+    } else {
+      return -1;
     }
-    if (std::string(node) == "other.service.name") {
-      addr = MakeSockaddr("200.200.200.200", 0);
-    }
-    *res = new addrinfo{};
-    (*res)->ai_addr = new sockaddr(addr);
-    res[0]->ai_addrlen = sizeof(sockaddr);
+    getaddrinfo_addrinfo = {};
+    getaddrinfo_addrinfo.ai_addr = &getaddrinfo_addr;
+    getaddrinfo_addrinfo.ai_addrlen = sizeof(getaddrinfo_addr);
+    *res = &getaddrinfo_addrinfo;
     return 0;
   }
 };
