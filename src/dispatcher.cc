@@ -127,7 +127,7 @@ int Dispatcher::Getaddrinfo(const char* node, const char* service, const addrinf
   // [pid 108970] client->getaddrinfo("google.de", nil, 0xc00009c090, 0xc0000a4010)                       = 0
 
   int ret = raw_->Getaddrinfo(node, service, hints, res);
-  if (ret != 0) {
+  if (ret != 0 || !node) {
     return ret;
   }
 
