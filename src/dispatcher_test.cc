@@ -85,3 +85,47 @@ TEST(Dispatcher, ForwardConfig) {
   EXPECT_EQ(0, dispatcher.Shutdown(tls_fd, 2));
   EXPECT_EQ(0, dispatcher.Close(tls_fd));
 }
+
+TEST(Dispatcher, ForwardConfigDomains) {
+  const auto raw = std::make_shared<MockSocket>();
+  const auto tls = std::make_shared<MockSocket>();
+  const int tls_fd = 4;
+
+  Dispatcher dispatcher(R"({"tls":{"service.name:443": "CA_CRT" , "other.service.name:80": "DIFF_CA_CRT"}})", raw, tls);
+
+  sockaddr sock_addr = MakeSockaddr("133.133.133.133", 443);
+
+  addrinfo* result = nullptr;
+  EXPECT_EQ(0, dispatcher.Getaddrinfo("service.name", nullptr, nullptr, &result));
+
+  EXPECT_EQ(0, dispatcher.Connect(tls_fd, &sock_addr, sizeof(sock_addr)));
+
+  // expect call is forwarded to tls function
+  ASSERT_EQ(1, tls->connections.size());
+
+  const auto& args = tls->connections.at(tls_fd);
+  EXPECT_EQ(&sock_addr, args.addr);
+  EXPECT_EQ(sizeof(sock_addr), args.addrlen);
+  EXPECT_EQ("CA_CRT", args.ca_crt);
+
+  // expect call is not forwarded to raw function
+  EXPECT_TRUE(raw->connections.empty());
+
+  const std::string msg("Test");
+  EXPECT_EQ(msg.size(), dispatcher.Send(tls_fd, msg.data(), msg.size(), 0));
+
+  // expect data is send to tls socket
+  const std::string msg_buf_str(args.msg_buf.cbegin(), args.msg_buf.cend());
+  EXPECT_EQ(msg, msg_buf_str);
+
+  std::string recv_msg(1024, ' ');
+  const int ret_len = dispatcher.Recv(tls_fd, recv_msg.data(), recv_msg.size(), 0);
+  recv_msg.erase(recv_msg.find(' '));
+  EXPECT_EQ(recv_msg.size(), ret_len);
+
+  // expect data is received
+  EXPECT_EQ(recv_msg, "OK-" + msg);
+
+  EXPECT_EQ(0, dispatcher.Shutdown(tls_fd, 2));
+  EXPECT_EQ(0, dispatcher.Close(tls_fd));
+}
