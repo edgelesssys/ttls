@@ -24,17 +24,20 @@ endif()
 # ttls library
 #
 
-add_library(ttls
+add_library(ttlsobj OBJECT
   src/dispatcher.cc
   src/mbedtls_socket.cc
   src/test_server.cc
   3rdparty/mbedtls/ssl_server.c)
 
-set_property(TARGET ttls PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET ttlsobj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_include_directories(ttls
+target_include_directories(ttlsobj
   PUBLIC include 3rdparty/nlohmann/include
   PRIVATE include/ttls)
+
+add_library(ttls)
+target_link_libraries(ttls ttlsobj)
 
 #
 # test
