@@ -19,7 +19,8 @@ class MbedtlsSocket : public Socket {
 
   int Close(int sockfd) override;
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) override;
-  virtual int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& ca_crt);
+  virtual int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen,
+                      const std::string& ca_crt, const std::string& client_crt, const std::string& client_key);
   ssize_t Recv(int sockfd, void* buf, size_t len, int flags) override;
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags) override;
   int Shutdown(int sockfd, int how) override;
@@ -32,6 +33,8 @@ class MbedtlsSocket : public Socket {
     mbedtls_ssl_context ssl{};
     mbedtls_net_context net{};
     mbedtls_x509_crt cacerts{};
+    mbedtls_x509_crt clicert{};
+    mbedtls_pk_context pkey{};
     SocketPtr sock{};
   };
   std::mutex mtx_;

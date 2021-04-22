@@ -5,6 +5,92 @@
 
 namespace edgeless::ttls {
 
+const std::string CLIENT_CRT =
+    "-----BEGIN CERTIFICATE-----\r\n"
+    "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\r\n"
+    "-----END CERTIFICATE-----\r\n";
+
+const std::string CLIENT_KEY =
+    "-----BEGIN PRIVATE KEY-----\r\n"
+    "MIIJQgIBADANBgkqhkiG9w0BAQEFAASCCSwwggkoAgEAAoICAQDIYm+33AeeynKK\r\n"
+    "nCPp8OBIsrJWS0/4r5MjeUjSqpHcwOz31mRbdMU/yZz6bhO8TVAjnDRMsNI/LVkD\r\n"
+    "/uT2U/eNRM3JhJf2qlRlk7D81sHuqqEkeIYgNZBX6F5d6ojIcL2rVidRPwYs1bxE\r\n"
+    "rJaKtcZCPcnUA1JCNHzB66qCyWF2E/oc669PFMG3jg0yubJT+a2e4gCjZxAUA09O\r\n"
+    "JWbJz+jWj/t7gNqdDVcZBn6+L6X3xrZbwZs9ex9u4/H6zucwmlrvmFccWymPEdVB\r\n"
+    "xJGD20vackPVWiDoJOgcSSCYK2so6bq+mpjG/7FC6pFOoWs6LbDbPC64cXO2cJij\r\n"
+    "s5pASwS5A19QGIO8H2SLDEOJscFRKqqrwn8O1P1JNr6e2WPG94F6ZsjqdIT52ySr\r\n"
+    "yUHY1hmS8foAyRme49PTSQcaAti71ANUKwaDhuSvCAp6S8aWFsvVUSeSBWoys25+\r\n"
+    "ZJV7g7fe8g3Z768eamxVwtpd7V2G16Qx43EkdF+MaCf5HErP0RYyVxuuBNn6BSfd\r\n"
+    "ni8hpb/BiBJt2tKtkKH3sJzQSMJa9cwX8hRKpJpENRZyRCxt5+HN4zeZCxdMs2F8\r\n"
+    "81anhQgGwGkFVSa/4SK12EVdcSYwePyz6rzs9LWCukxmVG7w15vs+sSewnkcih9l\r\n"
+    "RVdCmQsxDIpnkTbB0iNwrY029PAKUwIDAQABAoICAGt3v4rPypZy5PNJwkkZEnBq\r\n"
+    "xhJZ2c35++OujEvPhuLp5S0WIkSaX59SNYppttPqcuxmPfZTbq7LV045SfqCFeYB\r\n"
+    "3IwTPJzhxNmlV+qCEwg5Iqs4qFZl48ABs3qS6kD1lgNp9TQxpNIu3wXFugcybd3g\r\n"
+    "3XmDPn6bP72Q8qWp80csd5tDG4ZCD5Kt8I4f4XAAHAl2E/mOsKTLEaFLldDuXGWW\r\n"
+    "Wr1l4dkQ6oFVZmwBifVU8UBMmUFj4vvJ7GEizgLXBaYyAaYHjkZYvhLDpXceCZRi\r\n"
+    "a9bku3lFMebZoU17G8GZeLn4l69COoM04jFViPhuwMcTg8sPrYtO384L6NJKaYEN\r\n"
+    "RY2O3VNpxB4w6VdKiZFH9iuhk4GuNOzqCM3jkZZpkNX2qKXbJoTS8AuD7k3JFbv7\r\n"
+    "L2E0Tk9oOpXZZtlk9UwSiBAUTY+uxCFVpg1eKaAiKUD7+VoX0D0Keky+rBuiZWl5\r\n"
+    "NCbppCEp7SjgAspuXb4zZvGJWzaYk6k0bAl8/HJ2HSIVGgp+dgMMNw/6TKT12KCH\r\n"
+    "eZSc4cXU8exasb22jZ+6fQXtgsOD4E8lnyE0you1NzINhHjK56t8hDl7AmvOV1/g\r\n"
+    "+CIPPAKBUVN1BXADsmgIj4xXKAYIdlibkuZ6VQSnzd/e1G0oYcIwcwVaMAkDHtZ2\r\n"
+    "pOyT/YkxdQnrjr88YJLBAoIBAQDkz+K2Ny37gQGFlHpjf0BcDjX9BRYsRtjD1h1V\r\n"
+    "EGkEr1+Xt712Mz6shEixpi0wfinjaNB15QMw0dtj10+YeUJfOzyNxrgCp6AMwANs\r\n"
+    "hEWfBE5pRN/X2jqjjT73BFKx6GJNIUBAitG7zAJx5Ur44hE7CNK7dcMDhS4tv5RO\r\n"
+    "ec9MIno6Wfg74Lf8g+q0k3t5y9uC/3jvBUt6Xr+STv26SBttrmKdwmDQLMU6ePK6\r\n"
+    "WWbOHeytMPjFenVSKjxp4+jFSLmGqHDkxtxKJxdjTuWwE6dWeYejZaZNm/NhpGz7\r\n"
+    "RPXm0T8bnwLoupLtJb1nUBSuDq+NO6ET/21Xgnit2pFoE3RbAoIBAQDgMdQT/sBB\r\n"
+    "14jKTp/8WzWmf2qdbG3wmKRBsD+zWgY0Byk73QWxdg+33sYtTLR6m95m2QBJEgc+\r\n"
+    "SFdAMjA9dTrgsVlHjec4dmS1uTWrNDnVFdhib15ozcj2N7kVk4gZNc5neAjYorD5\r\n"
+    "sAIchMYmRVqCQvF+arsd3PKxs8dMY6qVrYi5aLV1/xpWS9E5SOoBqvV9PHjSWdjn\r\n"
+    "kAk1TfcWoBOYzehLmphaH+tfUJBg3SIya6NpqXfPNXxdKxa0xWgg09qjp3G+utUh\r\n"
+    "MhCOte21k3SS4pSAD+OfdsfhnlDUHOgOSTXVrRxiNzEPHPtqJvhnrkUIl2H/3dJn\r\n"
+    "PQs5DsbqPMNpAoIBAEqJYfwjy4njg4BlVt00pd2XD4VF8+wmhBR/mnyMZPmOu6Ar\r\n"
+    "zb9EgEUorpmYXZ4vayvWiBnvqXNs2YATsq0jyzhEjrxMoMLUojGlFzhxelCL0ZM/\r\n"
+    "SYACahm/OGS1ds7XubYQf+LGlf4MPjumCx86XYySmjtQ6F8sMlfa0dAipCHUFWcO\r\n"
+    "yeuPj7/lpT5/0LhjbTWmTVnnqqfJV7SsoMDfHnhDV4K2wFzwSKt8nO2RlAjO/LuK\r\n"
+    "eW+zLaa/dYC1Kq2hvDYehvAvy7EoPNkv6WjLbjagTkwvH9amV8lWC95qn4Q6Y8l2\r\n"
+    "qjbwGE7CfYm7L5Fn3U4vv5BJI/Be4zsXOUjjFYMCggEAVbT23IYBPaqGEsEoDDNa\r\n"
+    "OUJwoan4BYh1Et+sGoaJ5I3wR4BhUsxNif9SR7MRM+Yuiabfow+PUVIaeOI26ufM\r\n"
+    "EGX8OYyYHk+0hHw/dinLChkF1eu5bdttviLjUMpLt0eIlqmeyCK6AVo2FGz1y1+s\r\n"
+    "ECxDYg6vZeU3qpON1zgq2Hm00Rykcm2Jxf/KBlpHi0et/aiGj/PlJfE8c/JQSYf8\r\n"
+    "tefRrEV3hMy7EH8eEsm27wuTNyugL8jEuGFmlsj428Phy7qRk1adb8lR5xzJuSab\r\n"
+    "5CNWnfZ1EFs6YphBUjWSyRNXz04Ukb+Ds8Fio9wuDoTiwzwMLOLCMtF1XuS1Sorc\r\n"
+    "MQKCAQEAnEDm+RsWUQ0jF97HqxLTxzPO1LIu+f/l8OOh2UcqtIDtdRDIaEPRs/SL\r\n"
+    "y1kxUD3fc6HLGwFHd8zgoYqo5/ekCa0lh+Cksm9N3ZWKwctZ6s1Txk1p7Xph/Zna\r\n"
+    "KL6MX+BphtTGVgnoUPLDgJnLRz9y0orK59CGg7OHj6BQmZgA+7r0b/4e37aY4IJC\r\n"
+    "6NUH6Kbjp7zAgL+K6uWbtcwyKMnv3tVHYzD1KShtNg+rawon3coWZmhCYvIy3I1l\r\n"
+    "WqSrzeBWokjL62cQE6ROz9dsqFBd0kXKMI0HrYz21XmWFTyxc4O7SgAzD1akGfXe\r\n"
+    "X8U9Nqaha61KrsseciulcwjldkiMKg==\r\n"
+    "-----END PRIVATE KEY-----\r\n";
+
 const std::string SERVER_CRT =
     "-----BEGIN CERTIFICATE-----\r\n"
     "MIIFPTCCAyUCFFuRbCDjo/Fh6T1BOAxsWDt6HH8fMA0GCSqGSIb3DQEBCwUAMFox\r\n"
@@ -37,6 +123,7 @@ const std::string SERVER_CRT =
     "O12vCs7iQzFFotHy2dUZ6FFE+TY+w2R32c4zV4wjG5d1CXwlYxqPLYu4tbyTtb/W\r\n"
     "xA==\r\n"
     "-----END CERTIFICATE-----\r\n";
+
 const std::string CA_CRT =
     "-----BEGIN CERTIFICATE-----\r\n"
     "MIIFqzCCA5OgAwIBAgIUbBY17peevr4MypRtXYzUiJ1qVEgwDQYJKoZIhvcNAQEL\r\n"
@@ -71,6 +158,7 @@ const std::string CA_CRT =
     "6e8E8mLPSC23bAYGfqSlHmZ0tI8UxnpoVpFTt803beDEF4z2dcpMRfcWmjZHO2zh\r\n"
     "7Oe8km7JBDiS8Av4cPe9\r\n"
     "-----END CERTIFICATE-----\r\n";
+
 const std::string SERVER_KEY =
     "-----BEGIN PRIVATE KEY-----\r\n"
     "MIIJQwIBADANBgkqhkiG9w0BAQEFAASCCS0wggkpAgEAAoICAQCy5R4P8xAobPxI\r\n"
@@ -129,5 +217,5 @@ const std::string SERVER_KEY =
  * Starts a tls test server and waits for it to be ready.
  * @return newly created thread
  */
-std::thread StartTestServer();
+std::thread StartTestServer(int client_auth);
 }  // namespace edgeless::ttls

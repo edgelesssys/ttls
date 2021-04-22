@@ -50,7 +50,8 @@ TEST(Dispatcher, ForwardConfig) {
   const auto tls = std::make_shared<MockSocket>();
   const int tls_fd = 4;
 
-  Dispatcher dispatcher(R"({"tls":{"127.0.0.1:443": "CA_CRT" , "192.168.0.1:80": "DIFF_CA_CRT"}})", raw, tls);
+  Dispatcher dispatcher(R"({"tls":{"127.0.0.1:443":{"cacrt": "CA_CRT", "clicert": "", "clikey": ""},"192.168.0.1:80": {"cacrt" : "DIFF_CA_CRT", "clicert": "", "clikey": ""}}})",
+                        raw, tls);
 
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 443);
 
@@ -91,7 +92,7 @@ TEST(Dispatcher, ForwardConfigDomains) {
   const auto tls = std::make_shared<MockSocket>();
   const int tls_fd = 4;
 
-  Dispatcher dispatcher(R"({"tls":{"service.name:443": "CA_CRT" , "other.service.name:80": "DIFF_CA_CRT"}})", raw, tls);
+  Dispatcher dispatcher(R"({"tls":{"service.name:443": {"cacrt" : "CA_CRT", "clicert": "", "clikey": ""} , "other.service.name:80": {"cacrt" : "DIFF_CA_CRT", "clicert": "", "clikey": ""} }})", raw, tls);
 
   sockaddr sock_addr = MakeSockaddr("133.133.133.133", 443);
 
