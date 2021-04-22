@@ -65,7 +65,11 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
       std::lock_guard<std::mutex> lock(fds_mtx_);
       tls_fds_.insert(sockfd);
     }
-    return tls_->Connect(sockfd, addr, addrlen, Conf()["tls"][domain_port]);
+    const auto& conf = Conf()["tls"][domain_port];
+    return tls_->Connect(sockfd, addr, addrlen,
+                         conf["cacrt"],
+                         conf["clicert"],
+                         conf["clikey"]);
   } catch (const std::runtime_error&) {
     return -1;
   }

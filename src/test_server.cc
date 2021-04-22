@@ -5,7 +5,7 @@
 
 using namespace edgeless;
 
-extern "C" int edgeless_ttls_test_server(void notify(void*), void* event, const char* srv_crt, const char* cas_pem, const char* srv_key);
+extern "C" int edgeless_ttls_test_server(void notify(void*), void* event, const char* srv_crt, const char* cas_pem, const char* srv_key, int client_auth);
 
 namespace {
 struct Event {
@@ -26,9 +26,9 @@ static void Notify(void* event) {
   ev.cv.notify_one();
 }
 
-std::thread ttls::StartTestServer() {
+std::thread ttls::StartTestServer(int client_auth) {
   Event ev{};
-  std::thread t1(edgeless_ttls_test_server, Notify, &ev, SERVER_CRT.c_str(), CA_CRT.c_str(), SERVER_KEY.c_str());
+  std::thread t1(edgeless_ttls_test_server, Notify, &ev, SERVER_CRT.c_str(), CA_CRT.c_str(), SERVER_KEY.c_str(), client_auth);
   {
     std::unique_lock<std::mutex> lk(ev.m);
     ev.cv.wait(lk, [&] { return ev.ready; });

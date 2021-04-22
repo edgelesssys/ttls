@@ -79,7 +79,7 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
-int edgeless_ttls_test_server( void notify(void*), void* event, const char* srv_crt, const char* cas_pem, const char* srv_key )
+int edgeless_ttls_test_server( void notify(void*), void* event, const char* srv_crt, const char* cas_pem, const char* srv_key, int client_auth )
 {
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
@@ -203,6 +203,8 @@ int edgeless_ttls_test_server( void notify(void*), void* event, const char* srv_
                                    mbedtls_ssl_cache_set );
 #endif
 
+
+    mbedtls_ssl_conf_authmode(&conf, client_auth);    
     mbedtls_ssl_conf_ca_chain( &conf, srvcert.next, NULL );
     if( ( ret = mbedtls_ssl_conf_own_cert( &conf, &srvcert, &pkey ) ) != 0 )
     {
