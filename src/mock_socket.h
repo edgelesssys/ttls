@@ -40,7 +40,7 @@ struct MockSocket : MbedtlsSocket, RawSocket {
     return 0;
   }
 
-  int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& ca_crt, const std::string& client_crt, const std::string& client_key) override {
+  int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& /*hostname*/, const std::string& ca_crt, const std::string& client_crt, const std::string& client_key) override {
     if (!connections.try_emplace(sockfd, Connection{addr, addrlen, ca_crt, client_crt, client_key}).second)
       return -1;
     return 0;
