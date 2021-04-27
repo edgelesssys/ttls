@@ -47,12 +47,15 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
   ip_buf.erase(ip_buf.find('\0'));
   port_buf.erase(port_buf.find('\0'));
   std::string domain_port = ip_buf + ":" + port_buf;
+  std::string hostname;
   // prefer domains over IPs
   {
     const std::lock_guard<std::mutex> lock(domain_mtx_);
     const auto it = ip_domain_.find(ip_buf);
-    if (it != ip_domain_.cend())
-      domain_port = it->second + ":" + port_buf;
+    if (it != ip_domain_.cend()) {
+      hostname = it->second;
+      domain_port = hostname + ":" + port_buf;
+    }
   }
 
   // 2. check if not in json --> raw_->Connect(...)
@@ -66,10 +69,8 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
       tls_fds_.insert(sockfd);
     }
     const auto& conf = Conf()["tls"][domain_port];
-    return tls_->Connect(sockfd, addr, addrlen,
-                         conf["cacrt"],
-                         conf["clicert"],
-                         conf["clikey"]);
+    return tls_->Connect(sockfd, addr, addrlen, hostname, conf["cacrt"],
+                         conf["clicert"], conf["clikey"]);
   } catch (const std::runtime_error&) {
     return -1;
   }

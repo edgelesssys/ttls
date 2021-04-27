@@ -23,7 +23,7 @@ TEST(Mbedtls, Connect) {
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), CA_CRT, "", ""), 0);
+  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", CA_CRT, "", ""), 0);
   EXPECT_EQ(0, sock.Shutdown(fd, SHUT_RDWR));
   EXPECT_EQ(0, sock.Close(fd));
   t1.join();
@@ -38,7 +38,7 @@ TEST(Mbedtls, ConnectNonBlock) {
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), CA_CRT, "", ""), 0);
+  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", CA_CRT, "", ""), 0);
   EXPECT_EQ(0, sock.Shutdown(fd, 2));
   EXPECT_EQ(0, sock.Close(fd));
   t1.join();
@@ -53,7 +53,7 @@ TEST(Mbedtls, SendAndRecieve) {
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), CA_CRT, "", ""), 0);
+  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", CA_CRT, "", ""), 0);
   EXPECT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
 
   std::string buf(4096, ' ');
@@ -73,7 +73,7 @@ TEST(Mbedtls, SendAndRecieveNonBlock) {
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), CA_CRT, "", ""), 0);
+  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", CA_CRT, "", ""), 0);
   EXPECT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
 
   std::string buf(4096, ' ');
@@ -102,7 +102,7 @@ TEST(Mbedtls, ConnectClientAuth) {
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
-  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), CA_CRT, CLIENT_CRT, CLIENT_KEY), 0);
+  EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", CA_CRT, CLIENT_CRT, CLIENT_KEY), 0);
   EXPECT_EQ(0, sock.Shutdown(fd, SHUT_RDWR));
   EXPECT_EQ(0, sock.Close(fd));
   t1.join();

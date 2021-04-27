@@ -122,7 +122,7 @@ int MbedtlsSocket::Connect(int /*sockfd*/, const sockaddr* /*addr*/, socklen_t /
   return -1;
 }
 
-int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& ca_crt,
+int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& hostname, const std::string& ca_crt,
                            const std::string& client_crt, const std::string& client_key) {
   const auto ret = [&] {
     std::lock_guard<std::mutex> lock(mtx_);
@@ -144,7 +144,6 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, 
                                           MBEDTLS_SSL_PRESET_DEFAULT));
   mbedtls_ssl_conf_rng(&ctx.conf, mbedtls_ctr_drbg_random, &ctr_drbg_);
 
-  //CheckResult(mbedtls_x509_crt_parse_file(ctx.cacerts, "ca.crt"));
   CheckResult(mbedtls_x509_crt_parse(&ctx.cacerts, reinterpret_cast<const unsigned char*>(ca_crt.data()), ca_crt.size() + 1));
   mbedtls_ssl_conf_ca_chain(&ctx.conf, &ctx.cacerts, nullptr);
   mbedtls_ssl_conf_authmode(&ctx.conf, MBEDTLS_SSL_VERIFY_REQUIRED);
@@ -164,7 +163,8 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, 
     CheckResult(mbedtls_ssl_conf_own_cert(&ctx.conf, &ctx.clicert, &ctx.pkey));
   }
 
-  CheckResult(mbedtls_ssl_set_hostname(&ctx.ssl, "localhost"));  // TODO: propably parse sockaddr or new param from dispatcher
+  if (!hostname.empty())
+    CheckResult(mbedtls_ssl_set_hostname(&ctx.ssl, hostname.data()));
 
   if (sock_->Connect(ctx.net.fd, addr, addrlen) && errno != EINPROGRESS) {
     throw std::runtime_error("connect failed");
