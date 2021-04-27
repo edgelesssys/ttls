@@ -21,6 +21,8 @@ static int CheckResult(int ret) {
   if (ret < 0) {
     std::array<char, 100> buf{};
     mbedtls_strerror(ret, buf.data(), buf.size());
+    if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
+      errno = EAGAIN;
     throw std::runtime_error("mbedtls: "s + buf.data());
   }
   return ret;
