@@ -82,7 +82,7 @@ int MbedtlsSocket::sock_net_recv(void* ctx, unsigned char* buf, size_t len) {
     case ECONNRESET:
       return MBEDTLS_ERR_NET_CONN_RESET;
   }
-  return MBEDTLS_ERR_NET_SEND_FAILED;
+  return MBEDTLS_ERR_NET_RECV_FAILED;
 }
 
 /**
