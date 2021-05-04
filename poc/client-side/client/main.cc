@@ -19,6 +19,9 @@ class Sock final : public edgeless::ttls::RawSocket {
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) override {
     return connect(sockfd, addr, addrlen);
   }
+  int Accept4(int /*sockfd*/, sockaddr* /*addr*/, socklen_t* /*addrlen*/, int /*flags*/) override {
+    return -1;
+  }
   ssize_t Send(int sockfd, const void* buf, size_t len, int /*flags*/)
       override {
     return write(sockfd, buf, len);
@@ -72,10 +75,10 @@ const std::string kCACrt =
     "7Oe8km7JBDiS8Av4cPe9\\r\\n"
     "-----END CERTIFICATE-----\\r\\n";
 
-const auto kDispatcherConf = "{\"tls\":{\"localhost:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicert\": \"\", \"clikey\": \"\" } }}";
+const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\":{\"localhost:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicert\": \"\", \"clikey\": \"\" }}}}";
 
 const auto raw = std::make_shared<Sock>();
-const auto tls = std::make_shared<edgeless::ttls::MbedtlsSocket>(raw);
+const auto tls = std::make_shared<edgeless::ttls::MbedtlsSocket>(raw, false);
 edgeless::ttls::Dispatcher dis(kDispatcherConf, raw, tls);
 
 int connect_hook(int sockfd, const sockaddr* addr, socklen_t addrlen) {
