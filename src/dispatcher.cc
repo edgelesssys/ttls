@@ -59,7 +59,8 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
   }
 
   // 2. check if not in json --> raw_->Connect(...)
-  if (Conf()["tls"].find(domain_port) == Conf()["tls"].cend())
+  const auto& entries = Conf()["tls"]["Outgoing"];
+  if (entries.find(domain_port) == entries.cend())
     return raw_->Connect(sockfd, addr, addrlen);
 
   // 3. else --> save fd + tls_->Connect(...)
@@ -68,9 +69,9 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
       std::lock_guard<std::mutex> lock(fds_mtx_);
       tls_fds_.insert(sockfd);
     }
-    const auto& conf = Conf()["tls"][domain_port];
-    return tls_->Connect(sockfd, addr, addrlen, hostname, conf["cacrt"],
-                         conf["clicert"], conf["clikey"]);
+    const auto& entry = entries[domain_port];
+    return tls_->Connect(sockfd, addr, addrlen, hostname, entry["cacrt"],
+                         entry["clicert"], entry["clikey"]);
   } catch (const std::runtime_error&) {
     return -1;
   }
@@ -136,7 +137,7 @@ int Dispatcher::Getaddrinfo(const char* node, const char* service, const addrinf
     return ret;
   }
 
-  for (const auto& el : Conf()["tls"].items()) {
+  for (const auto& el : Conf()["tls"]["Outgoing"].items()) {
     const std::string domain = el.key().substr(0, el.key().find(':'));
 
     if (node == domain) {
@@ -160,6 +161,61 @@ int Dispatcher::Getaddrinfo(const char* node, const char* service, const addrinf
     }
   }
   return 0;
+}
+
+int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags) {
+  sockaddr sock_addr{};
+  socklen_t sock_len{};
+
+  const int fd = raw_->Accept4(sockfd, &sock_addr, &sock_len, flags);
+
+  if (fd < 0) {
+    return fd;
+  }
+  if (addr != nullptr && addrlen != nullptr) {
+    *addr = sock_addr;
+    *addrlen = sock_len;
+  }
+
+  // 1. parse IP out of sockaddr
+  std::string ip_buf(NI_MAXHOST, ' ');
+  std::string port_buf(NI_MAXSERV, ' ');
+  int ret = getnameinfo(&sock_addr, sock_len, ip_buf.data(), NI_MAXHOST, port_buf.data(), NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+  if (ret != 0) {
+    return -1;
+  }
+
+  ip_buf.erase(ip_buf.find('\0'));
+  port_buf.erase(port_buf.find('\0'));
+  std::string domain_port = ip_buf + ":" + port_buf;
+  std::string hostname;
+  // prefer domains over IPs
+  {
+    const std::lock_guard<std::mutex> lock(domain_mtx_);
+    const auto it = ip_domain_.find(ip_buf);
+    if (it != ip_domain_.cend()) {
+      hostname = it->second;
+      domain_port = hostname + ":" + port_buf;
+    }
+  }
+  // 2. check if not in json --> return fd
+  const auto& entries = Conf()["tls"]["Incoming"];
+  if (entries.find(domain_port) == entries.cend())
+    return fd;
+
+  // 3. else --> save fd + tls_->Connect(...)
+  try {
+    {
+      std::lock_guard<std::mutex> lock(fds_mtx_);
+      tls_fds_.insert(fd);
+    }
+    const auto& conf = entries[domain_port];
+    tls_->Accept(fd, conf["cacrt"],
+                 conf["clicert"], conf["clikey"]);
+    return fd;
+  } catch (const std::runtime_error&) {
+    return -1;
+  }
 }
 
 const nlohmann::json& Dispatcher::Conf() const noexcept {

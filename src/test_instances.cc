@@ -1,4 +1,4 @@
-#include "test_server.h"
+#include "test_instances.h"
 
 #include <condition_variable>
 #include <mutex>
@@ -6,6 +6,7 @@
 using namespace edgeless;
 
 extern "C" int edgeless_ttls_test_server(void notify(void*), void* event, const char* srv_crt, const char* cas_pem, const char* srv_key, int client_auth);
+extern "C" int edgeless_ttls_test_client(const char* srv_crt, const char* cas_pem, const char* srv_key, bool client_auth);
 
 namespace {
 struct Event {
@@ -34,4 +35,8 @@ std::thread ttls::StartTestServer(int client_auth) {
     ev.cv.wait(lk, [&] { return ev.ready; });
   }
   return t1;
+}
+
+std::thread ttls::StartTestClient(bool client_auth) {
+  return std::thread(edgeless_ttls_test_client, CLIENT_CRT.c_str(), CA_CRT.c_str(), CLIENT_KEY.c_str(), client_auth);
 }

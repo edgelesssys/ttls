@@ -14,11 +14,14 @@ namespace edgeless::ttls {
 class MbedtlsSocket : public Socket {
  public:
   MbedtlsSocket();
-  explicit MbedtlsSocket(const SocketPtr& sock_);
+  MbedtlsSocket(const SocketPtr& sock, bool req_client_auth);
   ~MbedtlsSocket() override;
 
   int Close(int sockfd) override;
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) override;
+  int Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags) override;
+  virtual int Accept(int sockfd, const std::string& ca_crt,
+                     const std::string& sever_crt, const std::string& sever_key);
   virtual int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& hostname,
                       const std::string& ca_crt, const std::string& client_crt, const std::string& client_key);
   ssize_t Recv(int sockfd, void* buf, size_t len, int flags) override;
@@ -43,6 +46,7 @@ class MbedtlsSocket : public Socket {
 
   mbedtls_ctr_drbg_context ctr_drbg_;
   mbedtls_entropy_context entropy_;
+  bool req_client_auth_;
 };
 
 typedef std::shared_ptr<MbedtlsSocket> MbedtlsSockPtr;

@@ -27,8 +27,9 @@ endif()
 add_library(ttlsobj OBJECT
   src/dispatcher.cc
   src/mbedtls_socket.cc
-  src/test_server.cc
-  3rdparty/mbedtls/ssl_server.c)
+  src/test_instances.cc
+  3rdparty/mbedtls/ssl_server.c
+  3rdparty/mbedtls/ssl_client.c)
 
 set_property(TARGET ttlsobj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
