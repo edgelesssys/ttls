@@ -13,6 +13,7 @@
 namespace edgeless::ttls {
 
 struct Connection {
+  bool outgoing{};
   const sockaddr* addr{};
   socklen_t addrlen{};
   std::string ca_crt{};
@@ -35,13 +36,30 @@ struct MockSocket : MbedtlsSocket, RawSocket {
   }
 
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) override {
-    if (!connections.try_emplace(sockfd, Connection{addr, addrlen}).second)
+    if (!connections.try_emplace(sockfd, Connection{true, addr, addrlen}).second)
       return -1;
     return 0;
   }
 
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& /*hostname*/, const std::string& ca_crt, const std::string& client_crt, const std::string& client_key) override {
-    if (!connections.try_emplace(sockfd, Connection{addr, addrlen, ca_crt, client_crt, client_key}).second)
+    if (!connections.try_emplace(sockfd, Connection{true, addr, addrlen, ca_crt, client_crt, client_key}).second)
+      return -1;
+    return 0;
+  }
+
+  int Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int /*flags*/) override {
+    if (!connections.try_emplace(sockfd, Connection{false, addr, *addrlen}).second)
+      return -1;
+
+    *addr = MakeSockaddr("111.111.111.111", 22);
+    *addrlen = sizeof(sockaddr);
+    // need to return the fd for the accepted connection
+    // start from fd = 4 (0-2 are taken by the system and 3 is usually the listening socket)
+    return static_cast<int>(connections.size() + 3);
+  }
+
+  int Accept(int fd, const std::string& ca_crt, const std::string& client_crt, const std::string& client_key) override {
+    if (!connections.try_emplace(fd, Connection{false, nullptr, 0, ca_crt, client_crt, client_key}).second)
       return -1;
     return 0;
   }

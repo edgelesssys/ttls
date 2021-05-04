@@ -30,6 +30,7 @@ class Dispatcher final {
   // socket functions
   int Close(int fd);
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen);
+  int Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags);
   ssize_t Recv(int sockfd, void* buf, size_t len, int flags);
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags);
   int Shutdown(int sockfd, int how);

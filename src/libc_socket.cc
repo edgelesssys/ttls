@@ -9,6 +9,9 @@ int LibcSocket::Close(int fd) {
 int LibcSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
   return connect(sockfd, addr, addrlen);
 }
+int LibcSocket::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags) {
+  return accept4(sockfd, addr, addrlen, flags);
+}
 ssize_t LibcSocket::Recv(int sockfd, void* buf, size_t len, int /*flags*/) {
   return read(sockfd, buf, len);
 }

@@ -13,6 +13,7 @@
 #include <system_error>
 
 #include "mbedtls/error.h"
+#include "mbedtls/ssl_internal.h"
 
 using namespace edgeless::ttls;
 
@@ -29,11 +30,11 @@ static int CheckResult(int ret) {
 }
 
 MbedtlsSocket::MbedtlsSocket()
-    : ctr_drbg_{}, entropy_{} {
+    : ctr_drbg_{}, entropy_{}, req_client_auth_(false) {
 }
 
-MbedtlsSocket::MbedtlsSocket(const SocketPtr& sock)
-    : sock_(sock), ctr_drbg_{}, entropy_{} {
+MbedtlsSocket::MbedtlsSocket(const SocketPtr& sock, bool req_client_auth)
+    : sock_(sock), ctr_drbg_{}, entropy_{}, req_client_auth_(req_client_auth) {
   assert(sock);
   mbedtls_ctr_drbg_init(&ctr_drbg_);
   mbedtls_entropy_init(&entropy_);
@@ -206,4 +207,62 @@ ssize_t MbedtlsSocket::Send(int sockfd, const void* buf, size_t len, int /*flags
   }
   ();
   return CheckResult(mbedtls_ssl_write(&ctx.ssl, static_cast<const unsigned char*>(buf), len));
+}
+
+int MbedtlsSocket::Accept4(int /*sockfd*/, sockaddr* /*addr*/, socklen_t* /*addrlen*/, int /*flags*/) {
+  throw std::runtime_error("no crt provided");
+}
+
+int MbedtlsSocket::Accept(int sockfd, const std::string& ca_crt,
+                          const std::string& sever_crt, const std::string& sever_key) {
+  const auto ret = [&] {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return contexts_.try_emplace(sockfd);
+  }();
+
+  if (!ret.second)
+    throw std::system_error(EISCONN, std::system_category(), __func__);
+  auto& ctx = ret.first->second;
+  ctx.sock = sock_;
+  ctx.net.fd = sockfd;
+
+  CheckResult(mbedtls_x509_crt_parse(&ctx.cacerts,
+                                     reinterpret_cast<const unsigned char*>(ca_crt.data()),
+                                     ca_crt.size() + 1));
+  CheckResult(mbedtls_x509_crt_parse(&ctx.clicert,
+                                     reinterpret_cast<const unsigned char*>(sever_crt.data()),
+                                     sever_crt.size() + 1));
+  CheckResult(mbedtls_pk_parse_key(&ctx.pkey,
+                                   reinterpret_cast<const unsigned char*>(sever_key.data()),
+                                   sever_key.size() + 1, nullptr, 0));
+
+  CheckResult(mbedtls_ssl_config_defaults(&ctx.conf, MBEDTLS_SSL_IS_SERVER,
+                                          MBEDTLS_SSL_TRANSPORT_STREAM,
+                                          MBEDTLS_SSL_PRESET_DEFAULT));
+
+  mbedtls_ssl_conf_rng(&ctx.conf, mbedtls_ctr_drbg_random, &ctr_drbg_);
+  mbedtls_ssl_conf_ca_chain(&ctx.conf, &ctx.cacerts, nullptr);
+
+  if (req_client_auth_)
+    mbedtls_ssl_conf_authmode(&ctx.conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+
+  CheckResult(mbedtls_ssl_conf_own_cert(&ctx.conf, &ctx.clicert, &ctx.pkey));
+  CheckResult(mbedtls_ssl_setup(&ctx.ssl, &ctx.conf));
+
+  mbedtls_ssl_set_bio(&ctx.ssl, &ctx, sock_net_send, sock_net_recv, nullptr);
+
+  pollfd pfd{ctx.net.fd, POLLOUT | POLLIN, 0};
+  int re = -1;
+  do {
+    if (poll(&pfd, 1, -1) < 0)
+      throw std::runtime_error("socket unavailable");
+
+    re = mbedtls_ssl_handshake(&ctx.ssl);
+    if (re == MBEDTLS_ERR_SSL_WANT_READ || re == MBEDTLS_ERR_SSL_WANT_WRITE) {
+      continue;
+    }
+    CheckResult(re);
+  } while (re != 0);
+
+  return 0;
 }
