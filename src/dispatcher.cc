@@ -187,20 +187,24 @@ int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flag
 
   ip_buf.erase(ip_buf.find('\0'));
   port_buf.erase(port_buf.find('\0'));
-  std::string domain_port = ip_buf + ":" + port_buf;
-  std::string hostname;
-  // prefer domains over IPs
+
+  // prefer domain:port -> domain:* -> IP:Port -> IP:*
+  std::string hostname = ip_buf;
   {
     const std::lock_guard<std::mutex> lock(domain_mtx_);
     const auto it = ip_domain_.find(ip_buf);
     if (it != ip_domain_.cend()) {
       hostname = it->second;
-      domain_port = hostname + ":" + port_buf;
     }
   }
   // 2. check if not in json --> return fd
   const auto& entries = Conf()["tls"]["Incoming"];
-  if (entries.find(domain_port) == entries.cend())
+  std::string key;
+  if (entries.find(hostname + ":" + port_buf) != entries.cend())
+    key = hostname + ":" + port_buf;
+  else if (entries.find(hostname + ":*") != entries.cend())
+    key = hostname + ":*";
+  else
     return fd;
 
   // 3. else --> save fd + tls_->Connect(...)
@@ -209,7 +213,7 @@ int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flag
       std::lock_guard<std::mutex> lock(fds_mtx_);
       tls_fds_.insert(fd);
     }
-    const auto& conf = entries[domain_port];
+    const auto& conf = entries[key];
     tls_->Accept(fd, conf["cacrt"],
                  conf["clicert"], conf["clikey"]);
     return fd;
