@@ -165,7 +165,7 @@ int Dispatcher::Getaddrinfo(const char* node, const char* service, const addrinf
 
 int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags) {
   sockaddr sock_addr{};
-  socklen_t sock_len{};
+  socklen_t sock_len = sizeof(sockaddr);
 
   const int fd = raw_->Accept4(sockfd, &sock_addr, &sock_len, flags);
 
