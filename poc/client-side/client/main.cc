@@ -22,6 +22,9 @@ class Sock final : public edgeless::ttls::RawSocket {
   int Accept4(int /*sockfd*/, sockaddr* /*addr*/, socklen_t* /*addrlen*/, int /*flags*/) override {
     return -1;
   }
+  int Bind(int /*sockfd*/, const sockaddr* /*addr*/, socklen_t /*addrlen*/) override {
+    return -1;
+  }
   ssize_t Send(int sockfd, const void* buf, size_t len, int /*flags*/)
       override {
     return write(sockfd, buf, len);
