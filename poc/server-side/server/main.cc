@@ -17,6 +17,9 @@ class Sock final : public edgeless::ttls::RawSocket {
   int Connect(int /*sockfd*/, const sockaddr* /*addr*/, socklen_t /*addrlen*/) override {
     return -1;
   }
+  int Bind(int sockfd, const sockaddr* addr, socklen_t addrlen) override {
+    return bind(sockfd, addr, addrlen);
+  }
   int Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags) override {
     return accept4(sockfd, addr, addrlen, flags);
   }
@@ -160,7 +163,7 @@ const std::string kServerKey =
     "FixD4ZKk1BloAg68xzWdqF6I28BAetSQ\\r\\n"
     "-----END PRIVATE KEY-----\\r\\n";
 
-const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\": {\"localhost:8080\": {\"cacrt\": \"\", \"clicert\": \"\", \"clikey\": \"\"}}, \"Incoming\": {\"::ffff:127.0.0.1:9090\": { \"cacrt\": \"" + kCACrt + "\", \"clicert\": \"" + kServerCert + "\", \"clikey\": \"" + kServerKey + "\" }}}}";
+const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\": {\"localhost:8080\": {\"cacrt\": \"\", \"clicert\": \"\", \"clikey\": \"\"}}, \"Incoming\": {\"*:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicert\": \"" + kServerCert + "\", \"clikey\": \"" + kServerKey + "\" }}}}";
 
 const auto raw = std::make_shared<Sock>();
 const auto tls = std::make_shared<edgeless::ttls::MbedtlsSocket>(raw, true);
@@ -168,6 +171,10 @@ edgeless::ttls::Dispatcher dis(kDispatcherConf, raw, tls);
 
 int send_hook(int sockfd, void* buf, size_t len, int flags) {
   return dis.Send(sockfd, buf, len, flags);
+}
+
+int bind_hook(int sockfd, const sockaddr* addr, socklen_t addrlen) {
+  return dis.Bind(sockfd, addr, addrlen);
 }
 
 int accept4_hook(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags) {
@@ -188,6 +195,8 @@ int close_hook(int fd) {
 
 long dispatch(long rax, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) {
   switch (rax) {
+    case SYS_bind:
+      return bind_hook(arg1, reinterpret_cast<const sockaddr*>(arg2), arg3);
     case SYS_accept4:
       return accept4_hook(arg1, reinterpret_cast<sockaddr*>(arg2), reinterpret_cast<socklen_t*>(arg3), arg4);
     case SYS_write:

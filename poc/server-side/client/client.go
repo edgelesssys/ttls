@@ -5,9 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
-	"time"
 )
 
 func main() {
@@ -26,18 +24,7 @@ func main() {
 	}
 	conf := &tls.Config{Certificates: []tls.Certificate{cert}, ClientCAs: caCertPool, RootCAs: caCertPool, ClientAuth: tls.RequireAndVerifyClientCert}
 
-	localTCPAddr, err := net.ResolveTCPAddr("tcp", ":9090")
-	if err != nil {
-		panic(err)
-	}
-	//conf.BuildNameToCertificate()
-	transport := &http.Transport{TLSClientConfig: conf, DialContext: (&net.Dialer{
-		LocalAddr: localTCPAddr,
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-		DualStack: true,
-	}).DialContext,
-	}
+	transport := &http.Transport{TLSClientConfig: conf}
 	client := &http.Client{Transport: transport}
 
 	resp, err := client.Get("https://localhost:9000")
