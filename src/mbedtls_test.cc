@@ -126,10 +126,10 @@ TEST(Mbedtls, ServerSendAndRecieveNonBlock) {
   socklen_t len = sizeof(sockaddr);
   int client_fd = -1;
   do {
-    client_fd = libc_sock->Accept4(fd, &client_sock, &len, 0);
+    client_fd = sock.Accept(fd, &client_sock, &len, 0, CA_CRT, SERVER_CRT, SERVER_KEY);
   } while (client_fd == -1 && errno == EAGAIN);
 
-  EXPECT_EQ(sock.Accept(client_fd, CA_CRT, SERVER_CRT, SERVER_KEY), 0);
+  EXPECT_GT(client_fd, 0);
 
   std::string buf(4096, ' ');
   int ret = -1;

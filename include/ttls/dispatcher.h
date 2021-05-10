@@ -30,6 +30,7 @@ class Dispatcher final {
   // socket functions
   int Close(int fd);
   int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen);
+  int Bind(int sockfd, const sockaddr* addr, socklen_t addrlen);
   int Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags);
   ssize_t Recv(int sockfd, void* buf, size_t len, int flags);
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags);
@@ -39,11 +40,18 @@ class Dispatcher final {
  private:
   const nlohmann::json& Conf() const noexcept;
   bool IsTls(int sockfd);
-  std::mutex fds_mtx_;
-  std::mutex domain_mtx_;
+
+  //TODO: Refacor to combine mtx and data structure
+
+  std::mutex tls_fds_mtx_;
+  std::mutex ip_domain_mtx_;
+  std::mutex fd_entry_mtx_;
 
   std::unordered_map<std::string, std::string> ip_domain_;
+  // contains connected and accepted sockfds
   std::unordered_set<int> tls_fds_;
+  // map bound fds to their entryname in the json
+  std::unordered_map<int, std::string> fd_entry_;
   std::unique_ptr<nlohmann::json> config_;
   RawSockPtr raw_;
   MbedtlsSockPtr tls_;

@@ -136,19 +136,21 @@ TEST(Dispatcher, ForwardConfigDomains) {
 TEST(Dispatcher, ServerForwardConfig) {
   const auto raw = std::make_shared<MockSocket>();
   const auto tls = std::make_shared<MockSocket>();
+  const int bind_fd = 3;
   const int tls_fd = 4;
 
-  Dispatcher dispatcher(R"({"tls":{"Outgoing":{"127.0.0.1:443":{"cacrt": "CA_CRT", "clicert": "", "clikey": ""},"192.168.0.1:80": {"cacrt" : "DIFF_CA_CRT", "clicert": "", "clikey": ""}}, "Incoming" : {"111.111.111.111:22": { "cacrt": "CA_CRT", "clicert": "SERVER_CRT", "clikey": "SERVER_KEY" }}}})",
+  Dispatcher dispatcher(R"({"tls":{"Outgoing":{"127.0.0.1:443":{"cacrt": "CA_CRT", "clicert": "", "clikey": ""},"192.168.0.1:80": {"cacrt" : "DIFF_CA_CRT", "clicert": "", "clikey": ""}}, "Incoming" : {"*:9000": { "cacrt": "CA_CRT", "clicert": "SERVER_CRT", "clikey": "SERVER_KEY" }}}})",
                         raw, tls);
 
-  sockaddr sock_addr{};
+  auto bind_addr = MakeSockaddr("127.0.0.1", 9000);
+  sockaddr client_sock_addr{};
   socklen_t len = sizeof(sockaddr);
-  // EXPECT_EQ(tls_fd, dispatcher.Accept4(tls_fd, nullptr, nullptr, 0));
-  EXPECT_EQ(tls_fd, dispatcher.Accept4(tls_fd, &sock_addr, &len, 0));
+  EXPECT_EQ(0, dispatcher.Bind(bind_fd, &bind_addr, sizeof(bind_addr)));
+  EXPECT_EQ(tls_fd, dispatcher.Accept4(bind_fd, &client_sock_addr, &len, 0));
 
   // expect the correct sockaddr is returned
   auto expect_addr = MakeSockaddr("111.111.111.111", 22);
-  EXPECT_TRUE(std::equal(std::begin(sock_addr.sa_data), std::end(sock_addr.sa_data), std::begin(expect_addr.sa_data)));
+  EXPECT_TRUE(std::equal(std::begin(client_sock_addr.sa_data), std::end(client_sock_addr.sa_data), std::begin(expect_addr.sa_data)));
   EXPECT_EQ(len, sizeof(sockaddr));
 
   // expect call is forwarded to tls function
@@ -156,13 +158,12 @@ TEST(Dispatcher, ServerForwardConfig) {
 
   const auto& args = tls->connections.at(tls_fd);
   EXPECT_EQ(false, args.outgoing);
-  EXPECT_EQ(nullptr, args.addr);
   EXPECT_EQ("CA_CRT", args.ca_crt);
   EXPECT_EQ("SERVER_CRT", args.client_crt);
   EXPECT_EQ("SERVER_KEY", args.client_key);
 
-  // expect raw was used to accept the connection
-  EXPECT_EQ(1, raw->connections.size());
+  // expect raw has no connections
+  EXPECT_EQ(0, raw->connections.size());
 
   const std::string msg("Test");
   EXPECT_EQ(msg.size(), dispatcher.Send(tls_fd, msg.data(), msg.size(), 0));
@@ -178,23 +179,6 @@ TEST(Dispatcher, ServerForwardConfig) {
 
   // expect data is received
   EXPECT_EQ(recv_msg, "OK-" + msg);
-
-  EXPECT_EQ(0, dispatcher.Shutdown(tls_fd, SHUT_RDWR));
-  EXPECT_EQ(0, dispatcher.Close(tls_fd));
-}
-
-TEST(Dispatcher, ServerForwardConfigAcceptNullptr) {
-  const auto raw = std::make_shared<MockSocket>();
-  const auto tls = std::make_shared<MockSocket>();
-  const int tls_fd = 4;
-
-  Dispatcher dispatcher(R"({"tls":{"Outgoing":{"127.0.0.1:443":{"cacrt": "CA_CRT", "clicert": "", "clikey": ""},"192.168.0.1:80": {"cacrt" : "DIFF_CA_CRT", "clicert": "", "clikey": ""}}, "Incoming" : {"111.111.111.111:22": { "cacrt": "CA_CRT", "clicert": "SERVER_CRT", "clikey": "SERVER_KEY" }}}})",
-                        raw, tls);
-
-  EXPECT_EQ(tls_fd, dispatcher.Accept4(tls_fd, nullptr, nullptr, 0));
-
-  // expect call is forwarded to tls function
-  EXPECT_EQ(1, tls->connections.size());
 
   EXPECT_EQ(0, dispatcher.Shutdown(tls_fd, SHUT_RDWR));
   EXPECT_EQ(0, dispatcher.Close(tls_fd));

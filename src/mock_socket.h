@@ -47,21 +47,30 @@ struct MockSocket : MbedtlsSocket, RawSocket {
     return 0;
   }
 
-  int Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int /*flags*/) override {
-    if (!connections.try_emplace(sockfd, Connection{false, addr, *addrlen}).second)
-      return -1;
-
-    *addr = MakeSockaddr("111.111.111.111", 22);
-    *addrlen = sizeof(sockaddr);
-    // need to return the fd for the accepted connection
-    // start from fd = 4 (0-2 are taken by the system and 3 is usually the listening socket)
-    return static_cast<int>(connections.size() + 3);
+  int Bind(int /*sockfd*/, const sockaddr* /*addr*/, socklen_t /*addrlen*/) override {
+    return 0;
   }
 
-  int Accept(int fd, const std::string& ca_crt, const std::string& client_crt, const std::string& client_key) override {
-    if (!connections.try_emplace(fd, Connection{false, nullptr, 0, ca_crt, client_crt, client_key}).second)
+  int Accept4(int /*sockfd*/, sockaddr* addr, socklen_t* addrlen, int /*flags*/) override {
+    // need to return the fd for the accepted connection
+    // start from fd = 4 (0-2 are taken by the system and 3 is usually the listening socket)
+    int client_fd = static_cast<int>(connections.size() + 4);
+    if (!connections.try_emplace(client_fd, Connection{false, addr, *addrlen}).second)
       return -1;
-    return 0;
+    *addr = MakeSockaddr("111.111.111.111", 22);
+    *addrlen = sizeof(sockaddr);
+    return client_fd;
+  }
+
+  int Accept(int /*sockfd*/, sockaddr* addr, socklen_t* addrlen, int /*flags*/, const std::string& ca_crt, const std::string& client_crt, const std::string& client_key) override {
+    // need to return the fd for the accepted connection
+    // start from fd = 4 (0-2 are taken by the system and 3 is usually the listening socket)
+    int client_fd = static_cast<int>(connections.size() + 4);
+    if (!connections.try_emplace(client_fd, Connection{false, addr, *addrlen, ca_crt, client_crt, client_key}).second)
+      return -1;
+    *addr = MakeSockaddr("111.111.111.111", 22);
+    *addrlen = sizeof(sockaddr);
+    return client_fd;
   }
 
   ssize_t Recv(int sockfd, void* buf, size_t len, int /*flags*/) override {

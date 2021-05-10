@@ -213,18 +213,21 @@ int MbedtlsSocket::Accept4(int /*sockfd*/, sockaddr* /*addr*/, socklen_t* /*addr
   throw std::runtime_error("no crt provided");
 }
 
-int MbedtlsSocket::Accept(int sockfd, const std::string& ca_crt,
+int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags, const std::string& ca_crt,
                           const std::string& sever_crt, const std::string& sever_key) {
+  const int connection_fd = sock_->Accept4(sockfd, addr, addrlen, flags);
+  if (connection_fd == -1)
+    return -1;
   const auto ret = [&] {
     std::lock_guard<std::mutex> lock(mtx_);
-    return contexts_.try_emplace(sockfd);
+    return contexts_.try_emplace(connection_fd);
   }();
 
   if (!ret.second)
     throw std::system_error(EISCONN, std::system_category(), __func__);
   auto& ctx = ret.first->second;
   ctx.sock = sock_;
-  ctx.net.fd = sockfd;
+  ctx.net.fd = connection_fd;
 
   CheckResult(mbedtls_x509_crt_parse(&ctx.cacerts,
                                      reinterpret_cast<const unsigned char*>(ca_crt.data()),
@@ -264,5 +267,5 @@ int MbedtlsSocket::Accept(int sockfd, const std::string& ca_crt,
     CheckResult(re);
   } while (re != 0);
 
-  return 0;
+  return ctx.net.fd;
 }
