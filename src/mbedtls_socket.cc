@@ -214,7 +214,7 @@ int MbedtlsSocket::Accept4(int /*sockfd*/, sockaddr* /*addr*/, socklen_t* /*addr
 }
 
 int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags, const std::string& ca_crt,
-                          const std::string& sever_crt, const std::string& sever_key) {
+                          const std::string& sever_crt, const std::string& sever_key, const bool client_auth) {
   const int connection_fd = sock_->Accept4(sockfd, addr, addrlen, flags);
   if (connection_fd == -1)
     return -1;
@@ -246,7 +246,7 @@ int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int fl
   mbedtls_ssl_conf_rng(&ctx.conf, mbedtls_ctr_drbg_random, &ctr_drbg_);
   mbedtls_ssl_conf_ca_chain(&ctx.conf, &ctx.cacerts, nullptr);
 
-  if (req_client_auth_)
+  if (req_client_auth_ && client_auth)
     mbedtls_ssl_conf_authmode(&ctx.conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 
   CheckResult(mbedtls_ssl_conf_own_cert(&ctx.conf, &ctx.clicert, &ctx.pkey));

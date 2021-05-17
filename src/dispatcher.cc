@@ -198,7 +198,7 @@ int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flag
   try {
     const auto& conf = Conf()["tls"]["Incoming"][entry_name];
     const int client_fd = tls_->Accept(sockfd, addr, addrlen, flags, conf["cacrt"],
-                                       conf["clicert"], conf["clikey"]);
+                                       conf["clicert"], conf["clikey"], conf["clientAuth"]);
     {
       std::lock_guard<std::mutex> lock(tls_fds_mtx_);
       tls_fds_.insert(client_fd);
