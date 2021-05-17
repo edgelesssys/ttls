@@ -17,15 +17,30 @@
 
 using namespace edgeless::ttls;
 
-static int CheckResult(int ret) {
+static int CheckResult(const int ret) {
   using namespace std::string_literals;
-  if (ret < 0) {
-    std::array<char, 100> buf{};
-    mbedtls_strerror(ret, buf.data(), buf.size());
-    if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
-      errno = EAGAIN;
-    throw std::runtime_error("mbedtls: "s + buf.data());
+  if (ret >= 0) {
+    return ret;
   }
+  if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)
+    return 0;
+  std::array<char, 100> buf{};
+  mbedtls_strerror(ret, buf.data(), buf.size());
+  switch (ret) {
+    case MBEDTLS_ERR_SSL_WANT_WRITE:
+    case MBEDTLS_ERR_SSL_WANT_READ:
+      errno = EAGAIN;
+      break;
+    case MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO:
+    case MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE:
+    case MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
+      errno = ECONNABORTED;
+      break;
+    default:
+      break;
+  }
+  throw std::runtime_error("mbedtls: "s + buf.data());
+
   return ret;
 }
 
@@ -261,8 +276,12 @@ int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int fl
       throw std::runtime_error("socket unavailable");
 
     re = mbedtls_ssl_handshake(&ctx.ssl);
+
     if (re == MBEDTLS_ERR_SSL_WANT_READ || re == MBEDTLS_ERR_SSL_WANT_WRITE) {
       continue;
+    }
+    if (re < 0) {               // any unhandled handshake error
+      this->Close(ctx.net.fd);  // close connection before throwing
     }
     CheckResult(re);
   } while (re != 0);
