@@ -62,7 +62,7 @@ struct MockSocket : MbedtlsSocket, RawSocket {
     return client_fd;
   }
 
-  int Accept(int /*sockfd*/, sockaddr* addr, socklen_t* addrlen, int /*flags*/, const std::string& ca_crt, const std::string& client_crt, const std::string& client_key) override {
+  int Accept(int /*sockfd*/, sockaddr* addr, socklen_t* addrlen, int /*flags*/, const std::string& ca_crt, const std::string& client_crt, const std::string& client_key, const bool /*client_auth*/) override {
     // need to return the fd for the accepted connection
     // start from fd = 4 (0-2 are taken by the system and 3 is usually the listening socket)
     int client_fd = static_cast<int>(connections.size() + 4);

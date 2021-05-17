@@ -126,7 +126,7 @@ TEST(Mbedtls, ServerSendAndRecieveNonBlock) {
   socklen_t len = sizeof(sockaddr);
   int client_fd = -1;
   do {
-    client_fd = sock.Accept(fd, &client_sock, &len, 0, CA_CRT, SERVER_CRT, SERVER_KEY);
+    client_fd = sock.Accept(fd, &client_sock, &len, 0, CA_CRT, SERVER_CRT, SERVER_KEY, true);
   } while (client_fd == -1 && errno == EAGAIN);
 
   EXPECT_GT(client_fd, 0);

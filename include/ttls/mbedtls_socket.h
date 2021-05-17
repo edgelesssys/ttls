@@ -23,7 +23,7 @@ class MbedtlsSocket : public Socket {
 
   // accepts a new connection from sockfd and establishes a tls connection on the returned fd
   virtual int Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags, const std::string& ca_crt,
-                     const std::string& sever_crt, const std::string& sever_key);
+                     const std::string& sever_crt, const std::string& sever_key, bool client_auth);
   virtual int Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, const std::string& hostname,
                       const std::string& ca_crt, const std::string& client_crt, const std::string& client_key);
   ssize_t Recv(int sockfd, void* buf, size_t len, int flags) override;
