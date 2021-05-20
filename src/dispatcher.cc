@@ -71,7 +71,7 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
     }
     const auto& entry = entries[domain_port];
     return tls_->Connect(sockfd, addr, addrlen, hostname, entry["cacrt"],
-                         entry["clicert"], entry["clikey"]);
+                         entry["clicrt"], entry["clikey"]);
   } catch (const std::runtime_error&) {
     return -1;
   }
@@ -198,7 +198,7 @@ int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flag
   try {
     const auto& conf = Conf()["tls"]["Incoming"][entry_name];
     const int client_fd = tls_->Accept(sockfd, addr, addrlen, flags, conf["cacrt"],
-                                       conf["clicert"], conf["clikey"], conf["clientAuth"]);
+                                       conf["clicrt"], conf["clikey"], conf["clientAuth"]);
     {
       std::lock_guard<std::mutex> lock(tls_fds_mtx_);
       tls_fds_.insert(client_fd);
