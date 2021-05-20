@@ -52,7 +52,7 @@ TEST(Dispatcher, ClientForwardConfig) {
   const auto tls = std::make_shared<MockSocket>();
   const int tls_fd = 4;
 
-  Dispatcher dispatcher(R"({"tls":{"Outgoing":{"127.0.0.1:443":{"cacrt": "CA_CRT", "clicert": "", "clikey": ""},"192.168.0.1:80": {"cacrt" : "DIFF_CA_CRT", "clicert": "", "clikey": ""}}, "Incoming" : {"111.111.111.111:22": { "cacrt": "CA_CRT", "clicert": "SERVER_CRT", "clikey": "", "clientAuth": true }}}})",
+  Dispatcher dispatcher(R"({"tls":{"Outgoing":{"127.0.0.1:443":{"cacrt": "CA_CRT", "clicrt": "", "clikey": ""},"192.168.0.1:80": {"cacrt" : "DIFF_CA_CRT", "clicrt": "", "clikey": ""}}, "Incoming" : {"111.111.111.111:22": { "cacrt": "CA_CRT", "clicrt": "SERVER_CRT", "clikey": "", "clientAuth": true }}}})",
                         raw, tls);
 
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 443);
@@ -94,7 +94,7 @@ TEST(Dispatcher, ForwardConfigDomains) {
   const auto tls = std::make_shared<MockSocket>();
   const int tls_fd = 4;
 
-  Dispatcher dispatcher(R"({"tls":{ "Outgoing": {"service.name:443": {"cacrt" : "CA_CRT", "clicert": "", "clikey": ""} , "other.service.name:80": {"cacrt" : "DIFF_CA_CRT", "clicert": "", "clikey": ""}}}})", raw, tls);
+  Dispatcher dispatcher(R"({"tls":{ "Outgoing": {"service.name:443": {"cacrt" : "CA_CRT", "clicrt": "", "clikey": ""} , "other.service.name:80": {"cacrt" : "DIFF_CA_CRT", "clicrt": "", "clikey": ""}}}})", raw, tls);
 
   sockaddr sock_addr = MakeSockaddr("133.133.133.133", 443);
 
@@ -139,7 +139,7 @@ TEST(Dispatcher, ServerForwardConfig) {
   const int bind_fd = 3;
   const int tls_fd = 4;
 
-  Dispatcher dispatcher(R"({"tls":{"Outgoing":{"127.0.0.1:443":{"cacrt": "CA_CRT", "clicert": "", "clikey": ""},"192.168.0.1:80": {"cacrt" : "DIFF_CA_CRT", "clicert": "", "clikey": ""}}, "Incoming" : {"*:9000": { "cacrt": "CA_CRT", "clicert": "SERVER_CRT", "clikey": "SERVER_KEY", "clientAuth": true }}}})",
+  Dispatcher dispatcher(R"({"tls":{"Outgoing":{"127.0.0.1:443":{"cacrt": "CA_CRT", "clicrt": "", "clikey": ""},"192.168.0.1:80": {"cacrt" : "DIFF_CA_CRT", "clicrt": "", "clikey": ""}}, "Incoming" : {"*:9000": { "cacrt": "CA_CRT", "clicrt": "SERVER_CRT", "clikey": "SERVER_KEY", "clientAuth": true }}}})",
                         raw, tls);
 
   auto bind_addr = MakeSockaddr("127.0.0.1", 9000);
