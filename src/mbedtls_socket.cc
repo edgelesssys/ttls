@@ -36,6 +36,9 @@ static int CheckResult(const int ret) {
     case MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
       errno = ECONNABORTED;
       break;
+    case MBEDTLS_ERR_SSL_INVALID_RECORD:
+      errno = EPROTO;
+      break;
     default:
       break;
   }
