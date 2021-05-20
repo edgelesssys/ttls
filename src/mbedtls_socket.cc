@@ -232,7 +232,7 @@ int MbedtlsSocket::Accept4(int /*sockfd*/, sockaddr* /*addr*/, socklen_t* /*addr
 }
 
 int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags, const std::string& ca_crt,
-                          const std::string& sever_crt, const std::string& sever_key, const bool client_auth) {
+                          const std::string& server_crt, const std::string& server_key, const bool client_auth) {
   const int connection_fd = sock_->Accept4(sockfd, addr, addrlen, flags);
   if (connection_fd == -1)
     return -1;
@@ -251,11 +251,11 @@ int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int fl
                                      reinterpret_cast<const unsigned char*>(ca_crt.data()),
                                      ca_crt.size() + 1));
   CheckResult(mbedtls_x509_crt_parse(&ctx.clicert,
-                                     reinterpret_cast<const unsigned char*>(sever_crt.data()),
-                                     sever_crt.size() + 1));
+                                     reinterpret_cast<const unsigned char*>(server_crt.data()),
+                                     server_crt.size() + 1));
   CheckResult(mbedtls_pk_parse_key(&ctx.pkey,
-                                   reinterpret_cast<const unsigned char*>(sever_key.data()),
-                                   sever_key.size() + 1, nullptr, 0));
+                                   reinterpret_cast<const unsigned char*>(server_key.data()),
+                                   server_key.size() + 1, nullptr, 0));
 
   CheckResult(mbedtls_ssl_config_defaults(&ctx.conf, MBEDTLS_SSL_IS_SERVER,
                                           MBEDTLS_SSL_TRANSPORT_STREAM,
