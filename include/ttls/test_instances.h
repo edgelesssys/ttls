@@ -215,15 +215,17 @@ const std::string SERVER_KEY =
 
 /**
  * Starts a tls test server and waits for it to be ready.
+ * @param port set the listening port
  * @param client_auth set 0 to disable and 2 to require client auth
  * @return newly created thread
  */
-std::thread StartTestServer(int client_auth);
+std::thread StartTestServer(const std::string& port, int client_auth);
 
 /**
- * Starts a tls test client that connects to port 9010. The server must already be listening.
+ * Starts a tls test client. The server must already be listening.
+ * @param port set port the client connects to
  * @param client_auth set to require client auth
  * @return newly created thread
  */
-std::thread StartTestClient(bool client_auth);
+std::thread StartTestClient(const std::string& port, bool client_auth);
 }  // namespace edgeless::ttls

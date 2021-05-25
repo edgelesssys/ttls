@@ -79,7 +79,7 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
-int edgeless_ttls_test_server( void notify(void*), void* event, const char* srv_crt, const char* cas_pem, const char* srv_key, int client_auth )
+int edgeless_ttls_test_server( void notify(void*), void* event, const char* srv_crt, const char* cas_pem, const char* srv_key, const char* port, int client_auth )
 {
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
@@ -152,10 +152,10 @@ int edgeless_ttls_test_server( void notify(void*), void* event, const char* srv_
     /*
      * 2. Setup the listening TCP socket
      */
-    mbedtls_printf( "  . Bind on https://localhost:9000/ ..." );
+    mbedtls_printf( "  . Bind on https://localhost:%s/ ...", port);
     fflush( stdout );
 
-    if( ( ret = mbedtls_net_bind( &listen_fd, NULL, "9000", MBEDTLS_NET_PROTO_TCP ) ) != 0 )
+    if( ( ret = mbedtls_net_bind( &listen_fd, NULL, port, MBEDTLS_NET_PROTO_TCP ) ) != 0 )
     {
         mbedtls_printf( " failed\n  ! mbedtls_net_bind returned %d\n\n", ret );
         goto exit;

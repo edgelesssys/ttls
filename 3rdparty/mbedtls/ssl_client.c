@@ -51,7 +51,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define SERVER_PORT "9010"
 #define SERVER_NAME "localhost"
 #define GET_REQUEST "GET / HTTP/1.0\r\n\r\n"
 
@@ -68,7 +67,7 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
-int edgeless_ttls_test_client(const char* cli_crt, const char* cas_pem, const char* cli_key, bool client_auth )
+int edgeless_ttls_test_client(const char* cli_crt, const char* cas_pem, const char* cli_key, const char* port, bool client_auth )
 {
     int ret = 1, len;
     int exit_code = MBEDTLS_EXIT_FAILURE;
@@ -133,11 +132,11 @@ int edgeless_ttls_test_client(const char* cli_crt, const char* cas_pem, const ch
     /*
      * 1. Start the connection
      */
-    mbedtls_printf( "  . Connecting to tcp/%s/%s...", SERVER_NAME, SERVER_PORT );
+    mbedtls_printf( "  . Connecting to tcp/%s/%s...", SERVER_NAME, port );
     fflush( stdout );
 
     if( ( ret = mbedtls_net_connect( &server_fd, SERVER_NAME,
-                                         SERVER_PORT, MBEDTLS_NET_PROTO_TCP ) ) != 0 )
+                                         port, MBEDTLS_NET_PROTO_TCP ) ) != 0 )
     {
         mbedtls_printf( " failed\n  ! mbedtls_net_connect returned %d\n\n", ret );
         goto exit;
