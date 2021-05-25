@@ -21,7 +21,7 @@ TEST(Mbedtls, Connect) {
   const int fd = socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_GE(fd, 0);
 
-  auto t1 = StartTestServer(MBEDTLS_SSL_VERIFY_NONE);
+  auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_NONE);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock, true);
@@ -36,7 +36,7 @@ TEST(Mbedtls, ConnectNonBlock) {
   const int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
   ASSERT_GE(fd, 0);
 
-  auto t1 = StartTestServer(MBEDTLS_SSL_VERIFY_NONE);
+  auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_NONE);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock, true);
@@ -51,7 +51,7 @@ TEST(Mbedtls, SendAndRecieve) {
   const int fd = socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_GE(fd, 0);
 
-  auto t1 = StartTestServer(MBEDTLS_SSL_VERIFY_NONE);
+  auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_NONE);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock, true);
@@ -71,7 +71,7 @@ TEST(Mbedtls, SendAndRecieveNonBlock) {
   const int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
   ASSERT_GE(fd, 0);
 
-  auto t1 = StartTestServer(MBEDTLS_SSL_VERIFY_NONE);
+  auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_NONE);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock, true);
@@ -100,7 +100,7 @@ TEST(Mbedtls, ConnectClientAuth) {
   const int fd = socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_GE(fd, 0);
 
-  auto t1 = StartTestServer(MBEDTLS_SSL_VERIFY_REQUIRED);
+  auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_REQUIRED);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock, true);
@@ -120,7 +120,7 @@ TEST(Mbedtls, ServerSendAndRecieveNonBlock) {
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9010);
   ASSERT_EQ(bind(fd, &sock_addr, sizeof(sockaddr)), 0);
   ASSERT_EQ(listen(fd, MBEDTLS_NET_LISTEN_BACKLOG), 0);
-  auto t1 = StartTestClient(true);
+  auto t1 = StartTestClient("9010", true);
 
   sockaddr client_sock{};
   socklen_t len = sizeof(sockaddr);

@@ -18,6 +18,11 @@ if(NOT TTLS_NOTEST)
   add_subdirectory(3rdparty/googletest/googletest)
 
   set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
+
+  if(CMAKE_BUILD_TYPE STREQUAL Debug)
+    add_compile_options(-fsanitize=thread)
+    add_link_options(-fsanitize=thread)
+  endif()
 endif()
 
 #
@@ -49,7 +54,8 @@ if(NOT TTLS_NOTEST)
     src/libc_socket.cc
     src/dispatcher_test.cc
     src/mbedtls_test.cc
-    src/util.cc)
+    src/util.cc
+    src/race_tests.cc)
 
   target_link_libraries(ttls_test ttls gtest_main mbedtls mbedx509 mbedcrypto)
 
