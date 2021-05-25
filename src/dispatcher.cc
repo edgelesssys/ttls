@@ -186,7 +186,7 @@ int Dispatcher::Getaddrinfo(const char* node, const char* service, const addrinf
 
 int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flags) {
   const auto entry = [&] {
-    std::lock_guard<std::mutex> lock(tls_fds_mtx_);
+    std::lock_guard<std::mutex> lock(fd_entry_mtx_);
     return fd_entry_.find(sockfd);
   }();
 
