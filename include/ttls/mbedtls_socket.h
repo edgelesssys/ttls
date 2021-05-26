@@ -14,7 +14,7 @@ namespace edgeless::ttls {
 class MbedtlsSocket : public Socket {
  public:
   MbedtlsSocket();
-  MbedtlsSocket(const SocketPtr& sock, bool req_client_auth);
+  MbedtlsSocket(SocketPtr sock, bool req_client_auth);
   ~MbedtlsSocket() override;
 
   int Close(int sockfd) override;

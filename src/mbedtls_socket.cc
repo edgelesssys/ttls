@@ -43,9 +43,9 @@ MbedtlsSocket::MbedtlsSocket()
     : ctr_drbg_{}, entropy_{}, req_client_auth_(false) {
 }
 
-MbedtlsSocket::MbedtlsSocket(const SocketPtr& sock, bool req_client_auth)
-    : sock_(sock), ctr_drbg_{}, entropy_{}, req_client_auth_(req_client_auth) {
-  assert(sock);
+MbedtlsSocket::MbedtlsSocket(SocketPtr sock, bool req_client_auth)
+    : sock_(std::move(sock)), ctr_drbg_{}, entropy_{}, req_client_auth_(req_client_auth) {
+  assert(sock_);
   mbedtls_ctr_drbg_init(&ctr_drbg_);
   mbedtls_entropy_init(&entropy_);
 
