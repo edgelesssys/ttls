@@ -72,7 +72,8 @@ int Dispatcher::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen) {
     const auto& entry = entries[domain_port];
     return tls_->Connect(sockfd, addr, addrlen, hostname, entry["cacrt"],
                          entry["clicrt"], entry["clikey"]);
-  } catch (const std::runtime_error&) {
+  } catch (const std::system_error& e) {
+    errno = e.code().value();
     return -1;
   }
 }
@@ -105,7 +106,8 @@ ssize_t Dispatcher::Recv(int sockfd, void* buf, size_t len, int flags) {
 
   try {
     return tls_->Recv(sockfd, buf, len, flags);
-  } catch (const std::runtime_error&) {
+  } catch (const std::system_error& e) {
+    errno = e.code().value();
     return -1;
   }
 }
@@ -116,7 +118,8 @@ ssize_t Dispatcher::Send(int sockfd, const void* buf, size_t len, int flags) {
 
   try {
     return tls_->Send(sockfd, buf, len, flags);
-  } catch (const std::runtime_error&) {
+  } catch (const std::system_error& e) {
+    errno = e.code().value();
     return -1;
   }
 }
@@ -128,7 +131,8 @@ int Dispatcher::Shutdown(int sockfd, int how) {
   try {
     tls_->Shutdown(sockfd, how);
     return 0;
-  } catch (const std::runtime_error&) {
+  } catch (const std::system_error& e) {
+    errno = e.code().value();
     return -1;
   }
 }
@@ -144,7 +148,8 @@ int Dispatcher::Close(int sockfd) {
       tls_fds_.erase(sockfd);
     }
     return 0;
-  } catch (const std::runtime_error&) {
+  } catch (const std::system_error& e) {
+    errno = e.code().value();
     return -1;
   }
 }
@@ -204,7 +209,8 @@ int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flag
       tls_fds_.insert(client_fd);
     }
     return client_fd;
-  } catch (const std::runtime_error&) {
+  } catch (const std::system_error& e) {
+    errno = e.code().value();
     return -1;
   }
 }
