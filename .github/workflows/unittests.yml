@@ -21,12 +21,22 @@ jobs:
         sudo apt install clang-tidy-10 libmbedtls-dev
         mkdir build
 
-    - name: Build
+    - name: Build Debug
       run: |
         cmake ..
         make -j`nproc`
       working-directory: build
 
-    - name: Test
+    - name: Test Debug
+      run: ctest --output-on-failure
+      working-directory: build
+
+    - name: Build Release+ASAN
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=Release -DTTLS_ASAN=ON ..
+        make -j`nproc`
+      working-directory: build
+
+    - name: Test Release+ASAN
       run: ctest --output-on-failure
       working-directory: build
