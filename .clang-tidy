@@ -7,6 +7,7 @@ Checks: "*,\
 -cppcoreguidelines-owning-memory,\
 -cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
 -cppcoreguidelines-pro-bounds-pointer-arithmetic,\
+-cppcoreguidelines-pro-type-const-cast,\
 -cppcoreguidelines-pro-type-cstyle-cast,\
 -cppcoreguidelines-pro-type-reinterpret-cast,\
 -cppcoreguidelines-pro-type-vararg,\
@@ -21,6 +22,7 @@ Checks: "*,\
 -hicpp-avoid-goto,\
 -hicpp-braces-around-statements,\
 -hicpp-no-array-decay,\
+-hicpp-no-assembler,\
 -hicpp-signed-bitwise,\
 -hicpp-special-member-functions,\
 -hicpp-vararg,\
@@ -33,5 +35,6 @@ Checks: "*,\
 -modernize-use-using,\
 -readability-braces-around-statements,\
 -readability-implicit-bool-conversion,\
+-readability-isolate-declaration,\
 -readability-magic-numbers,\
 -readability-qualified-auto"

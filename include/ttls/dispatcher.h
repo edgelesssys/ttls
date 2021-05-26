@@ -23,7 +23,7 @@ class Dispatcher final {
    * @param raw Socket functions that will be used if connection should not be wrapped.
    * @param tls Socket functions that will be used if connection should be wrapped.
    */
-  Dispatcher(std::string_view config, const RawSockPtr& raw, const MbedtlsSockPtr& tls);
+  Dispatcher(std::string_view config, RawSockPtr raw, MbedtlsSockPtr tls);
 
   ~Dispatcher();
 

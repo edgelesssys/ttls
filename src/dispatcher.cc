@@ -19,10 +19,10 @@ bool Dispatcher::IsTls(int sockfd) {
   return tls_fds_.find(sockfd) != tls_fds_.cend();
 }
 
-Dispatcher::Dispatcher(std::string_view config, const RawSockPtr& raw, const MbedtlsSockPtr& tls)
-    : raw_(raw), tls_(tls) {
-  assert(raw);
-  assert(tls);
+Dispatcher::Dispatcher(std::string_view config, RawSockPtr raw, MbedtlsSockPtr tls)
+    : raw_(std::move(raw)), tls_(std::move(tls)) {
+  assert(raw_);
+  assert(tls_);
 
   // parse config
   try {
