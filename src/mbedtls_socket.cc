@@ -29,22 +29,14 @@ static int CheckResult(const int ret) {
   switch (ret) {
     case MBEDTLS_ERR_SSL_WANT_WRITE:
     case MBEDTLS_ERR_SSL_WANT_READ:
-      errno = EAGAIN;
-      break;
+      throw std::system_error(EAGAIN, std::generic_category(), "mbedtls: "s + buf.data());
     case MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO:
     case MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE:
     case MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
-      errno = ECONNABORTED;
-      break;
-    case MBEDTLS_ERR_SSL_INVALID_RECORD:
-      errno = EPROTO;
-      break;
+      throw std::system_error(ECONNABORTED, std::generic_category(), "mbedtls: "s + buf.data());
     default:
-      break;
+      throw std::system_error(EPROTO, std::generic_category(), "mbedtls: "s + buf.data());
   }
-  throw std::runtime_error("mbedtls: "s + buf.data());
-
-  return ret;
 }
 
 MbedtlsSocket::MbedtlsSocket()
