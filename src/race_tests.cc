@@ -182,6 +182,7 @@ TEST(Race, Client) {
 
     addrinfo* result = nullptr;
     EXPECT_EQ(dis->Getaddrinfo("localhost", nullptr, nullptr, &result), 0);
+    freeaddrinfo(result);
     EXPECT_EQ(dis->Connect(fd, &sock_addr, sizeof(sock_addr)), 0);
     EXPECT_EQ(dis->Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
 
