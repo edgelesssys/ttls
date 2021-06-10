@@ -78,7 +78,7 @@ const std::string kCACrt =
     "7Oe8km7JBDiS8Av4cPe9\\r\\n"
     "-----END CERTIFICATE-----\\r\\n";
 
-const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\":{\"localhost:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicert\": \"\", \"clikey\": \"\" }}}}";
+const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\":{\"localhost:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicrt\": \"\", \"clikey\": \"\" }}}}";
 
 const auto raw = std::make_shared<Sock>();
 const auto tls = std::make_shared<edgeless::ttls::MbedtlsSocket>(raw, false);
