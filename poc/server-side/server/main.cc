@@ -163,7 +163,7 @@ const std::string kServerKey =
     "FixD4ZKk1BloAg68xzWdqF6I28BAetSQ\\r\\n"
     "-----END PRIVATE KEY-----\\r\\n";
 
-const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\": {\"localhost:8080\": {\"cacrt\": \"\", \"clicert\": \"\", \"clikey\": \"\"}}, \"Incoming\": {\"*:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicert\": \"" + kServerCert + "\", \"clikey\": \"" + kServerKey + "\" }}}}";
+const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\": {\"localhost:8080\": {\"cacrt\": \"\", \"clicrt\": \"\", \"clikey\": \"\"}}, \"Incoming\": {\"*:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicrt\": \"" + kServerCert + "\", \"clikey\": \"" + kServerKey + "\", \"clientAuth\": false }}}}";
 
 const auto raw = std::make_shared<Sock>();
 const auto tls = std::make_shared<edgeless::ttls::MbedtlsSocket>(raw, true);
