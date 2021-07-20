@@ -17,7 +17,7 @@
 
 using namespace edgeless::ttls;
 
-static int CheckResult(const int ret) {
+static int CheckResult(const int ret, const int default_errno = EPROTO) {
   using namespace std::string_literals;
   if (ret >= 0) {
     return ret;
@@ -36,7 +36,7 @@ static int CheckResult(const int ret) {
     case MBEDTLS_ERR_SSL_CONN_EOF:
       throw std::system_error(ECONNABORTED, std::generic_category(), "mbedtls: "s + buf.data());
     default:
-      throw std::system_error(EPROTO, std::generic_category(), "mbedtls: "s + buf.data());
+      throw std::system_error(default_errno, std::generic_category(), "mbedtls: "s + buf.data());
   }
 }
 
@@ -181,7 +181,7 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, 
     CheckResult(mbedtls_ssl_set_hostname(&ctx.ssl, hostname.data()));
 
   if (sock_->Connect(ctx.net.fd, addr, addrlen) && errno != EINPROGRESS) {
-    throw std::runtime_error("connect failed");
+    throw std::system_error(errno, std::generic_category());
   }
 
   mbedtls_ssl_set_bio(&ctx.ssl, &ctx, sock_net_send, sock_net_recv, nullptr);
@@ -196,7 +196,10 @@ int MbedtlsSocket::Connect(int sockfd, const sockaddr* addr, socklen_t addrlen, 
     if (re == MBEDTLS_ERR_SSL_WANT_READ || re == MBEDTLS_ERR_SSL_WANT_WRITE) {
       continue;
     }
-    CheckResult(re);
+    if (re < 0) {                             // any unhandled handshake error
+      this->Shutdown(ctx.net.fd, SHUT_RDWR);  // shutdown connection before throwing
+    }
+    CheckResult(re, ECONNREFUSED);
   } while (re != 0);
 
   return 0;
@@ -228,7 +231,7 @@ int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int fl
                           const std::string& server_crt, const std::string& server_key, const bool client_auth) {
   const int connection_fd = sock_->Accept4(sockfd, addr, addrlen, flags);
   if (connection_fd == -1)
-    return -1;
+    throw std::system_error(errno, std::generic_category());
   const auto ret = [&] {
     std::lock_guard<std::mutex> lock(mtx_);
     return contexts_.try_emplace(connection_fd);
@@ -279,7 +282,7 @@ int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int fl
     if (re < 0) {               // any unhandled handshake error
       this->Close(ctx.net.fd);  // close connection before throwing
     }
-    CheckResult(re);
+    CheckResult(re, ECONNABORTED);
   } while (re != 0);
 
   return ctx.net.fd;

@@ -138,7 +138,10 @@ TEST(Mbedtls, ServerSendAndRecieveNonBlock) {
   socklen_t len = sizeof(sockaddr);
   int client_fd = -1;
   do {
-    client_fd = sock.Accept(fd, &client_sock, &len, 0, credentials.ca_crt, credentials.server_crt, credentials.server_key, true);
+    try {
+      client_fd = sock.Accept(fd, &client_sock, &len, 0, credentials.ca_crt, credentials.server_crt, credentials.server_key, true);
+    } catch (const std::exception& e) {
+    }
   } while (client_fd == -1 && errno == EAGAIN);
 
   EXPECT_GT(client_fd, 0);
