@@ -33,6 +33,7 @@ static int CheckResult(const int ret) {
     case MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO:
     case MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE:
     case MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
+    case MBEDTLS_ERR_SSL_CONN_EOF:
       throw std::system_error(ECONNABORTED, std::generic_category(), "mbedtls: "s + buf.data());
     default:
       throw std::system_error(EPROTO, std::generic_category(), "mbedtls: "s + buf.data());
