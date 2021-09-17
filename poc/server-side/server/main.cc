@@ -1,5 +1,7 @@
 #include <plthook/plthook.h>
+#include <sys/sendfile.h>
 #include <sys/syscall.h>
+#include <sys/uio.h>
 #include <ttls/ttls.h>
 #include <unistd.h>
 
@@ -38,6 +40,10 @@ class Sock final : public edgeless::ttls::RawSocket {
   }
   int Getaddrinfo(const char* /*node*/, const char* /*service*/, const addrinfo* /*hints*/, addrinfo** /*res*/) override {
     return -1;
+  }
+
+  ssize_t Sendfile(int out_fd, int in_fd, off_t* offset, size_t count) override {
+    return sendfile(out_fd, in_fd, offset, count);
   }
 };
 
@@ -193,6 +199,18 @@ int close_hook(int fd) {
   return dis.Close(fd);
 }
 
+int sendfile_hook(int fd_out, int fd_in, off_t* offset, size_t count) {
+  return dis.Sendfile(fd_out, fd_in, offset, count);
+}
+
+int recvfrom_hook(int sockfd, void* __restrict__ buf, size_t len, int flags, struct sockaddr* __restrict__ address, socklen_t* __restrict__ address_len) {
+  return dis.Recvfrom(sockfd, buffer, flags, address, address_len);
+}
+
+ssize_t writev_hook(int fds, const struct iovec* iov, int iovcnt) {
+  return dis.Writev(fds, iov, iovcnt);
+}
+
 long dispatch(long rax, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) {
   switch (rax) {
     case SYS_bind:
@@ -207,6 +225,12 @@ long dispatch(long rax, long arg1, long arg2, long arg3, long arg4, long arg5, l
       return shutdown_hook(arg1, arg2);
     case SYS_close:
       return close_hook(arg1);
+    case SYS_sendfile:
+      return sendfile_hook(arg1, arg2, reinterpret_cast<off_t*>(arg3), arg4);
+    case SYS_recvfrom:
+      return recvfrom_hook(arg1, arg2, arg3, arg4, arg5, arg6);
+    case SYS_writev:
+      return writev_hook(arg1, reinterpret_cast<iovec*>(arg2), arg3);
   }
   return (*syscall_func)(rax, arg1, arg2, arg3, arg4, arg5, arg6);
 }

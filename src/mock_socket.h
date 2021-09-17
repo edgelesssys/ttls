@@ -1,6 +1,8 @@
 #pragma once
 
+#include <fcntl.h>
 #include <ttls/mbedtls_socket.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <array>
@@ -90,6 +92,36 @@ struct MockSocket : MbedtlsSocket, RawSocket {
     const auto p = static_cast<const char*>(buf);
     v.insert(v.end(), p, p + len);
     return len;
+  }
+
+  ssize_t Recvfrom(int sockfd, void* __restrict__ buf, size_t len, int flags, struct sockaddr* __restrict__ address, socklen_t* __restrict__ address_len) override {
+    if (address == nullptr && address_len == nullptr) {
+      return Recv(sockfd, buf, len, flags);
+    }
+    return -1;
+  }
+
+  ssize_t Sendfile(int out_fd, int in_fd, off_t* offset, size_t count) override {
+    auto& v = connections.at(out_fd).msg_buf;
+
+    lseek(in_fd, *offset, SEEK_SET);
+    std::vector<char> buf_vec(count);
+
+    int rret = read(in_fd, &buf_vec[0], count);
+    if (rret == -1) {
+      return -1;
+    }
+    const char* buf_char = static_cast<const char*>(&buf_vec[0]);
+    v.insert(v.end(), buf_char, buf_char + count);
+    return count;
+  }
+
+  ssize_t Writev(int fds, const struct iovec* iov, int iovcnt) override {
+    if (iovcnt != 1) return -1;
+    auto& v = connections.at(fds).msg_buf;
+    const auto p = static_cast<const char*>(iov->iov_base);
+    v.insert(v.end(), p, p + iov->iov_len);
+    return iov->iov_len;
   }
 
   sockaddr getaddrinfo_addr{};

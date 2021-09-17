@@ -36,6 +36,10 @@ class Dispatcher final {
   ssize_t Send(int sockfd, const void* buf, size_t len, int flags);
   int Shutdown(int sockfd, int how);
   int Getaddrinfo(const char* node, const char* service, const addrinfo* hints, addrinfo** res);
+  ssize_t Sendfile(int out_fd, int in_fd, off_t* offset, size_t count);
+  ssize_t Recvfrom(int sockfd, void* __restrict__ buf, size_t len, int flags, struct sockaddr* __restrict__ address, socklen_t* __restrict__ address_len);
+  // In nginx writev is equivalent to write, because iovcnt = 1
+  ssize_t Writev(int fds, const struct iovec* iov, int iovcnt);
 
  private:
   const nlohmann::json& Conf() const noexcept;

@@ -215,6 +215,47 @@ int Dispatcher::Accept4(int sockfd, sockaddr* addr, socklen_t* addrlen, int flag
   }
 }
 
+ssize_t Dispatcher::Sendfile(int out_fd, int in_fd, off_t* offset, size_t count) {
+  if (!IsTls(out_fd))
+    return raw_->Sendfile(out_fd, in_fd, offset, count);
+  try {
+    return tls_->Sendfile(out_fd, in_fd, offset, count);
+  } catch (const std::system_error& e) {
+    errno = e.code().value();
+    return -1;
+  }
+}
+
+ssize_t Dispatcher::Recvfrom(int sockfd, void* __restrict__ buf, size_t len, int flags, struct sockaddr* __restrict__ address, socklen_t* __restrict__ address_len) {
+  // when fd unknown -> raw->Recv() like in recv
+  if (!IsTls(sockfd))
+    return raw_->Recvfrom(sockfd, buf, len, flags, address, address_len);
+  try {
+    return tls_->Recvfrom(sockfd, buf, len, flags, address, address_len);
+  } catch (const std::system_error& e) {
+    errno = e.code().value();
+    return -1;
+  }
+}
+
+ssize_t Dispatcher::Writev(int fds, const struct iovec* iov, int iovcnt) {
+  if (iovcnt == 1) {
+    if (!IsTls(fds)) {
+      return raw_->Writev(fds, iov, iovcnt);
+    }
+
+    try {
+      return tls_->Writev(fds, iov, iovcnt);
+    } catch (const std::system_error& e) {
+      errno = e.code().value();
+      return -1;
+    }
+
+  } else {
+    throw std::runtime_error("iovcnt not 1");
+  }
+}
+
 const nlohmann::json& Dispatcher::Conf() const noexcept {
   return *config_;
 }

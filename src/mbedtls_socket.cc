@@ -1,6 +1,7 @@
 #include "mbedtls_socket.h"
 
 #include <arpa/inet.h>
+#include <fcntl.h>  // for open
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -286,4 +287,44 @@ int MbedtlsSocket::Accept(int sockfd, sockaddr* addr, socklen_t* addrlen, int fl
   } while (re != 0);
 
   return ctx.net.fd;
+}
+
+ssize_t MbedtlsSocket::Sendfile(int out_fd, int in_fd, off_t* offset, size_t count) {
+  auto& ctx = [&]() -> auto& {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return contexts_.at(out_fd);
+  }
+  ();
+  // std::unique_ptr<unsigned char> buf= reinterpret_cast<std::unique_ptr<unsigned char>>(std::malloc(count * sizeof(unsigned char)));
+  std::string buf(count, ' ');
+
+  off_t lret = lseek(in_fd, *offset, SEEK_SET);
+  if (lret == -1) {
+    throw std::runtime_error("offset seeking error");
+  }
+
+  ssize_t bytes_read = ctx.sock->Recv(in_fd, &buf[0], count, 0);
+  if (static_cast<size_t>(bytes_read) != 0) {
+    throw std::runtime_error("error reading");
+  }
+
+  return CheckResult(mbedtls_ssl_write(&ctx.ssl, reinterpret_cast<const unsigned char*>(&buf[0]), count));
+}
+
+/*
+* The observed nginx calls did not set any flags for recvfrom, hence it can be replaced with the normal recv
+*/
+
+ssize_t MbedtlsSocket::Recvfrom(int sockfd, void* __restrict__ buf, size_t len, int flags, struct sockaddr* __restrict__ address, socklen_t* __restrict__ address_len) {
+  if (address == nullptr && address_len == nullptr) {
+    return this->Recv(sockfd, buf, len, flags);
+  }
+  throw std::runtime_error("parameters 'struct sockaddr* address' and 'socklen_t* address_len' not supported yet");
+}
+
+ssize_t MbedtlsSocket::Writev(int fds, const struct iovec* iov, int iovcnt) {
+  if (iovcnt == 1) {
+    return this->Send(fds, iov->iov_base, iov->iov_len, 0);
+  }
+  throw std::runtime_error("vector writing is not supported");
 }
