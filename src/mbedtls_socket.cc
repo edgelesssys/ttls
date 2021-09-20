@@ -295,20 +295,27 @@ ssize_t MbedtlsSocket::Sendfile(int out_fd, int in_fd, off_t* offset, size_t cou
     return contexts_.at(out_fd);
   }
   ();
-  // std::unique_ptr<unsigned char> buf= reinterpret_cast<std::unique_ptr<unsigned char>>(std::malloc(count * sizeof(unsigned char)));
-  std::string buf(count, ' ');
 
-  off_t lret = lseek(in_fd, *offset, SEEK_SET);
+  std::string buf(count, ' ');
+  off_t lret = -1;
+
+  if (offset == nullptr) {
+    lret = lseek(in_fd, 0, SEEK_SET);
+  } else {
+    lret = lseek(in_fd, *offset, SEEK_SET);
+  }
+
   if (lret == -1) {
     throw std::runtime_error("offset seeking error");
   }
 
   ssize_t bytes_read = ctx.sock->Recv(in_fd, &buf[0], count, 0);
-  if (static_cast<size_t>(bytes_read) != 0) {
+  if (static_cast<size_t>(bytes_read) != 0 && static_cast<size_t>(bytes_read) != count) {
     throw std::runtime_error("error reading");
   }
 
   return CheckResult(mbedtls_ssl_write(&ctx.ssl, reinterpret_cast<const unsigned char*>(&buf[0]), count));
+  //return CheckResult(mbedtls_ssl_write(&ctx.ssl, (const unsigned char*)&buf[0], count));
 }
 
 /*

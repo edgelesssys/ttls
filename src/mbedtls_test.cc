@@ -53,7 +53,7 @@ TEST(Mbedtls, ConnectNonBlock) {
   t1.join();
 }
 
-TEST(Mbedtls, SendAndRecieve) {
+TEST(Mbedtls, SendAndReceive) {
   const int fd = socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_GE(fd, 0);
 
@@ -75,7 +75,7 @@ TEST(Mbedtls, SendAndRecieve) {
   t1.join();
 }
 
-TEST(Mbedtls, SendAndRecieveNonBlock) {
+TEST(Mbedtls, SendAndReceiveNonBlock) {
   const int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
   ASSERT_GE(fd, 0);
 
@@ -123,7 +123,7 @@ TEST(Mbedtls, ConnectClientAuth) {
   t1.join();
 }
 
-TEST(Mbedtls, ServerSendAndRecieveNonBlock) {
+TEST(Mbedtls, ServerSendAndReceiveNonBlock) {
   const int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
   ASSERT_GE(fd, 0);
 
@@ -173,6 +173,10 @@ TEST(Mbedtls, ServerSendAndRecieveNonBlock) {
   EXPECT_EQ(0, close(fd));
 }
 
+/*
+  Test with the suffix 'Ngx' simmulate nginx behaviour. 
+  The tests neither call original nginx functions nor do they implement them.
+*/
 TEST(Mbedtls, SendfileAndReceiveNgx) {
   const int fd_out = socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_GE(fd_out, 0);
@@ -183,54 +187,36 @@ TEST(Mbedtls, SendfileAndReceiveNgx) {
 
   const auto libc_sock = std::make_shared<LibcSocket>();
   MbedtlsSocket sock(libc_sock, true);
-
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
   EXPECT_EQ(sock.Connect(fd_out, &sock_addr, sizeof(sock_addr), "", credentials.ca_crt, "", ""), 0);
 
   // the current dir is {TTLS_BASE}/build
   const char* sample_file = "../src/index.html";
 
-  std::ifstream file(sample_file);
+  const std::ifstream file(sample_file);
   ASSERT_EQ(file.good(), true);
 
-  int fd_in = open(sample_file, O_CLOEXEC);
-  ASSERT_GT(fd_in, 0);
+  const int fd_in = open(sample_file, O_CLOEXEC);
+  ASSERT_GE(fd_in, 4) << "fd has be >= 4, fd = " << fd_in;
 
   const size_t count = 0xff;
   std::string rbuf(count, ' ');
 
-  // sock.Recv makes use of 'read'
-  ssize_t rret = sock.Recv(fd_in, static_cast<void*>(&rbuf[0]), count, 0);
-  //ASSERT_GE(rret, 0);
-  if (rret > 0) printf("nice\n");
+  // sock.Recv is a 'read' wrapper
+  const ssize_t rret = libc_sock->Recv(fd_in, &rbuf[0], count, 0);
+  ASSERT_GE(rret, 0);
 
-  /*
-  switch (rret) {
-    case MBEDTLS_ERR_SSL_WANT_READ:
-    case MBEDTLS_ERR_SSL_WANT_WRITE:
-    case MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS:
-    case MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS:
-    case MBEDTLS_ERR_SSL_CLIENT_RECONNECT:
-      throw std::runtime_error("bad tls handshake");
-      break;
-    default:
-      
-    }
-  */
+  const ssize_t sret = sock.Sendfile(fd_out, fd_in, nullptr, count);
+  ASSERT_EQ(sret, count);
 
-  const auto s = sock.Sendfile(fd_out, fd_in, nullptr, count);
-  EXPECT_EQ(s, count);
+  libc_sock->Close(fd_in);
 
-  sock.Close(fd_in);
-  sock.Close(fd_out);
-  /*
   std::string buf(4096, ' ');
   EXPECT_GT(sock.Recv(fd_out, buf.data(), buf.size(), 0), 0);
   EXPECT_EQ(buf.substr(9, 6), "200 OK");
   EXPECT_EQ(0, sock.Shutdown(fd_out, SHUT_RDWR));
   EXPECT_EQ(0, sock.Close(fd_out));
   t1.join();
-  */
 }
 
 TEST(Mbedtls, SendAndRecievefromNgx) {
