@@ -1,5 +1,6 @@
 #include "test_instances.h"
 
+#include <array>
 #include <condition_variable>
 #include <ctime>
 #include <iomanip>
