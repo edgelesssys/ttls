@@ -2,41 +2,39 @@ name: Unit Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
-
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
+      - name: Check out code
+        uses: actions/checkout@v6
 
-    - name: Check out code
-      uses: actions/checkout@v2
+      - name: Setup
+        run: |
+          sudo apt update
+          sudo apt install clang-tidy-11 libmbedtls-dev
+          mkdir build
 
-    - name: Setup
-      run: |
-        sudo apt update
-        sudo apt install clang-tidy-10 libmbedtls-dev
-        mkdir build
+      - name: Build Debug
+        run: |
+          cmake ..
+          make -j`nproc`
+        working-directory: build
 
-    - name: Build Debug
-      run: |
-        cmake ..
-        make -j`nproc`
-      working-directory: build
+      - name: Test Debug
+        run: ctest --output-on-failure
+        working-directory: build
 
-    - name: Test Debug
-      run: ctest --output-on-failure
-      working-directory: build
+      - name: Build Release+ASAN
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Release -DTTLS_ASAN=ON ..
+          make -j`nproc`
+        working-directory: build
 
-    - name: Build Release+ASAN
-      run: |
-        cmake -DCMAKE_BUILD_TYPE=Release -DTTLS_ASAN=ON ..
-        make -j`nproc`
-      working-directory: build
-
-    - name: Test Release+ASAN
-      run: ctest --output-on-failure
-      working-directory: build
+      - name: Test Release+ASAN
+        run: ctest --output-on-failure
+        working-directory: build

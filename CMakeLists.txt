@@ -16,8 +16,12 @@ if(NOT TTLS_NOTEST)
 
   set(GOOGLETEST_VERSION 1.10.0)
   add_subdirectory(3rdparty/googletest/googletest)
+  set_source_files_properties(
+    3rdparty/googletest/googletest/src/gtest-all.cc
+    DIRECTORY 3rdparty/googletest/googletest
+    PROPERTIES COMPILE_FLAGS -Wno-maybe-uninitialized)
 
-  set(CMAKE_CXX_CLANG_TIDY clang-tidy-10)
+  set(CMAKE_CXX_CLANG_TIDY clang-tidy-11 --extra-arg=-std=c++17)
 
   if(TTLS_ASAN)
     add_compile_options(-fsanitize=address,undefined -fno-sanitize-recover=all)
