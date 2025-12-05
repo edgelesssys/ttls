@@ -3,8 +3,8 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <ttls/libc_socket.h>
-#include <ttls/mbedtls_socket.h>
 #include <ttls/test_instances.h>
+#include <ttls/tls_socket.h>
 
 #include <chrono>
 #include <condition_variable>
@@ -26,7 +26,7 @@ TEST(Mbedtls, Connect) {
   auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_NONE, credentials.ca_crt, credentials.server_crt, credentials.server_key);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
-  MbedtlsSocket sock(libc_sock, true);
+  TlsSocket sock(libc_sock, true);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
   EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", credentials.ca_crt, "", ""), 0);
   EXPECT_EQ(0, sock.Shutdown(fd, SHUT_RDWR));
@@ -43,7 +43,7 @@ TEST(Mbedtls, ConnectNonBlock) {
   auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_NONE, credentials.ca_crt, credentials.server_crt, credentials.server_key);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
-  MbedtlsSocket sock(libc_sock, true);
+  TlsSocket sock(libc_sock, true);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
   EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", credentials.ca_crt, "", ""), 0);
   EXPECT_EQ(0, sock.Shutdown(fd, 2));
@@ -60,7 +60,7 @@ TEST(Mbedtls, SendAndRecieve) {
   auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_NONE, credentials.ca_crt, credentials.server_crt, credentials.server_key);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
-  MbedtlsSocket sock(libc_sock, true);
+  TlsSocket sock(libc_sock, true);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
   EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", credentials.ca_crt, "", ""), 0);
   EXPECT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
@@ -82,7 +82,7 @@ TEST(Mbedtls, SendAndRecieveNonBlock) {
   auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_NONE, credentials.ca_crt, credentials.server_crt, credentials.server_key);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
-  MbedtlsSocket sock(libc_sock, true);
+  TlsSocket sock(libc_sock, true);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
   EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", credentials.ca_crt, "", ""), 0);
   EXPECT_EQ(sock.Send(fd, kRequest.data(), kRequest.size(), 0), kRequest.size());
@@ -113,7 +113,7 @@ TEST(Mbedtls, ConnectClientAuth) {
   auto t1 = StartTestServer("9000", MBEDTLS_SSL_VERIFY_REQUIRED, credentials.ca_crt, credentials.server_crt, credentials.server_key);
 
   const auto libc_sock = std::make_shared<LibcSocket>();
-  MbedtlsSocket sock(libc_sock, true);
+  TlsSocket sock(libc_sock, true);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9000);
   EXPECT_EQ(sock.Connect(fd, &sock_addr, sizeof(sock_addr), "", credentials.ca_crt, credentials.cli_crt, credentials.cli_key), 0);
   EXPECT_EQ(0, sock.Shutdown(fd, SHUT_RDWR));
@@ -128,7 +128,7 @@ TEST(Mbedtls, ServerSendAndRecieveNonBlock) {
   TestCredentials credentials;
 
   const auto libc_sock = std::make_shared<LibcSocket>();
-  MbedtlsSocket sock(libc_sock, true);
+  TlsSocket sock(libc_sock, true);
   sockaddr sock_addr = MakeSockaddr("127.0.0.1", 9010);
   ASSERT_EQ(bind(fd, &sock_addr, sizeof(sockaddr)), 0);
   ASSERT_EQ(listen(fd, MBEDTLS_NET_LISTEN_BACKLOG), 0);

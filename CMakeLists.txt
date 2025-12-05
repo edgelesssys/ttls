@@ -38,10 +38,16 @@ endif()
 
 add_library(ttlsobj OBJECT
   src/dispatcher.cc
-  src/mbedtls_socket.cc
   src/test_instances.cc
   3rdparty/mbedtls/ssl_server.c
   3rdparty/mbedtls/ssl_client.c)
+
+if(TTLS_OPENSSL)
+  target_compile_definitions(ttlsobj PUBLIC TTLS_OPENSSL)
+  target_sources(ttlsobj PRIVATE src/openssl_socket.cc)
+else()
+  target_sources(ttlsobj PRIVATE src/mbedtls_socket.cc)
+endif()
 
 set_property(TARGET ttlsobj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
@@ -64,7 +70,7 @@ if(NOT TTLS_NOTEST)
     src/util.cc
     src/race_tests.cc)
 
-  target_link_libraries(ttls_test ttls gtest_main mbedtls mbedx509 mbedcrypto)
+  target_link_libraries(ttls_test ttls gtest_main ssl crypto mbedtls mbedx509 mbedcrypto)
 
   include(GoogleTest)
   enable_testing()

@@ -8,6 +8,13 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        cmakeflags:
+        -
+        - -DCMAKE_BUILD_TYPE=Release -DTTLS_ASAN=ON
+        - -DTTLS_OPENSSL=ON
+        - -DCMAKE_BUILD_TYPE=Release -DTTLS_ASAN=ON -DTTLS_OPENSSL=ON
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code
@@ -19,22 +26,12 @@ jobs:
           sudo apt install clang-tidy-11 libmbedtls-dev
           mkdir build
 
-      - name: Build Debug
+      - name: Build
         run: |
-          cmake ..
+          cmake ${{ matrix.cmakeflags }} ..
           make -j`nproc`
         working-directory: build
 
-      - name: Test Debug
-        run: ctest --output-on-failure
-        working-directory: build
-
-      - name: Build Release+ASAN
-        run: |
-          cmake -DCMAKE_BUILD_TYPE=Release -DTTLS_ASAN=ON ..
-          make -j`nproc`
-        working-directory: build
-
-      - name: Test Release+ASAN
+      - name: Test
         run: ctest --output-on-failure
         working-directory: build
