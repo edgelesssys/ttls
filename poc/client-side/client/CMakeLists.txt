@@ -37,4 +37,8 @@ target_include_directories(client
 add_dependencies(client app)
 
 target_link_libraries(plt dl)
-target_link_libraries(client plt ${CMAKE_BINARY_DIR}/app.a ttls Threads::Threads mbedtls mbedx509 mbedcrypto)
+target_link_libraries(client plt ${CMAKE_BINARY_DIR}/app.a ttls Threads::Threads ssl crypto mbedtls mbedx509 mbedcrypto)
+
+if(TTLS_OPENSSL)
+  add_compile_definitions(TTLS_OPENSSL)
+endif()
