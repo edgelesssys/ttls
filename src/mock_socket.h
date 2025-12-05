@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ttls/mbedtls_socket.h>
+#include <ttls/tls_socket.h>
 
 #include <algorithm>
 #include <array>
@@ -22,7 +22,7 @@ struct Connection {
   std::vector<char> msg_buf{};
 };
 
-struct MockSocket : MbedtlsSocket, RawSocket {
+struct MockSocket : TlsSocket, RawSocket {
   std::unordered_map<int, Connection> connections;
 
   int Close(int fd) override {

@@ -167,7 +167,7 @@ const std::string kServerKey =
 const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\": {\"localhost:8080\": {\"cacrt\": \"\", \"clicrt\": \"\", \"clikey\": \"\"}}, \"Incoming\": {\"*:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicrt\": \"" + kServerCert + "\", \"clikey\": \"" + kServerKey + "\", \"clientAuth\": false }}}}";
 
 const auto raw = std::make_shared<Sock>();
-const auto tls = std::make_shared<edgeless::ttls::MbedtlsSocket>(raw, true);
+const auto tls = std::make_shared<edgeless::ttls::TlsSocket>(raw, true);
 edgeless::ttls::Dispatcher dis(kDispatcherConf, raw, tls);
 
 int send_hook(int sockfd, void* buf, size_t len, int flags) {

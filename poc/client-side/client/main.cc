@@ -81,7 +81,7 @@ const std::string kCACrt =
 const auto kDispatcherConf = "{\"tls\":{ \"Outgoing\":{\"localhost:9000\": { \"cacrt\": \"" + kCACrt + "\", \"clicrt\": \"\", \"clikey\": \"\" }}}}";
 
 const auto raw = std::make_shared<Sock>();
-const auto tls = std::make_shared<edgeless::ttls::MbedtlsSocket>(raw, false);
+const auto tls = std::make_shared<edgeless::ttls::TlsSocket>(raw, false);
 edgeless::ttls::Dispatcher dis(kDispatcherConf, raw, tls);
 
 int connect_hook(int sockfd, const sockaddr* addr, socklen_t addrlen) {

@@ -9,8 +9,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "mbedtls_socket.h"
-
 using namespace edgeless::ttls;
 using namespace std::string_literals;
 
@@ -19,7 +17,7 @@ bool Dispatcher::IsTls(int sockfd) {
   return tls_fds_.find(sockfd) != tls_fds_.cend();
 }
 
-Dispatcher::Dispatcher(std::string_view config, RawSockPtr raw, MbedtlsSockPtr tls)
+Dispatcher::Dispatcher(std::string_view config, RawSockPtr raw, TlsSockPtr tls)
     : raw_(std::move(raw)), tls_(std::move(tls)) {
   assert(raw_);
   assert(tls_);
@@ -171,7 +169,7 @@ int Dispatcher::Getaddrinfo(const char* node, const char* service, const addrinf
 
       // save all (IPs, domain) in ip_domain_
       for (const addrinfo* rp = *res; rp != nullptr; rp = rp->ai_next) {
-        //parse ip out of sockaddr
+        // parse ip out of sockaddr
         std::string ip_buf(NI_MAXHOST, ' ');
         ret = getnameinfo(rp->ai_addr, rp->ai_addrlen, ip_buf.data(), NI_MAXHOST, nullptr, 0, NI_NUMERICHOST);
         if (ret != 0) {
