@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <ttls/dispatcher.h>
 #include <ttls/libc_socket.h>
-#include <ttls/mbedtls_socket.h>
 #include <ttls/test_instances.h>
+#include <ttls/tls_socket.h>
 
 #include <thread>
 
@@ -12,7 +12,7 @@ using namespace edgeless::ttls;
 
 TEST(Race, Client) {
   const auto raw = std::make_shared<LibcSocket>();
-  const auto tls = std::make_shared<MbedtlsSocket>(raw, false);
+  const auto tls = std::make_shared<TlsSocket>(raw, false);
 
   TestCredentials credentials;
   const std::string ca_crt_encoded = JSONescape(credentials.ca_crt);
@@ -98,7 +98,7 @@ TEST(Race, Client) {
 
 TEST(Race, Server) {
   const auto raw = std::make_shared<LibcSocket>();
-  const auto tls = std::make_shared<MbedtlsSocket>(raw, false);
+  const auto tls = std::make_shared<TlsSocket>(raw, false);
 
   TestCredentials credentials;
   const std::string ca_crt_encoded = JSONescape(credentials.ca_crt);
